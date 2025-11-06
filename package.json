@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "node src/index.ts",
-    "test-ast": "node src/ast.ts"
+    "test-ast": "node src/ast.ts",
+    "test-parser": "node src/parser.ts"
   },
   "dependencies": {},
   "devDependencies": {
