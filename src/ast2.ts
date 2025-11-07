@@ -248,6 +248,7 @@ BooleanProto.slots.set('cond', function(rec,msg, arg1, arg2) {
         return invoke(arg2, invoke,null)
     }
 })
+let NilProto = new LangObject("Nil",ObjectProto);
 
 function NumObj(value:number):LangObject {
     let obj = new LangObject("NumberLiteral",NumberProto)
@@ -270,6 +271,12 @@ function SymRef(value:string):LangObject {
 function BoolObj(value:boolean):LangObject {
     let obj = new LangObject("BooleanLiteral",BooleanProto)
     obj.slots.set('value',value)
+    return obj
+}
+
+function NilObj():LangObject {
+    let obj = new LangObject("NilLiteral",NilProto)
+    obj.slots.set('value',NilProto)
     return obj
 }
 
@@ -313,6 +320,9 @@ function evalAst(ast: ExpAst, scope:LangObject):LangObject {
     }
     if (ast.type == 'stmt') {
         let receiver = evalAst(ast.value[0], scope)
+        if (receiver.name == "SymbolReference") {
+            console.log("receiver is a symbol reference, not a symbol.")
+        }
         if (ast.value.length <= 1) {
             return receiver
         }
@@ -368,6 +378,12 @@ test('eval with scope', () => {
     let scope = new LangObject("Global",ObjectProto)
     scope.slots.set('Object',ObjectProto);
     scope.slots.set('Number',NumberProto);
+    scope.slots.set('Boolean',BooleanProto);
+    scope.slots.set('true',BoolObj(true));
+    scope.slots.set('false',BoolObj(false));
+    scope.slots.set('String',StringProto);
+    scope.slots.set('Nil',NilProto);
+    scope.slots.set('nil',NilObj());
     assert.deepStrictEqual(parseAndEvalWithScope('4 add 5 .',scope),NumObj(9))
     assert.deepStrictEqual(parseAndEvalWithScope('self setSlot "dog" 4 .',scope),NumObj(4))
     parseAndEvalWithScope('Object clone .',scope)
@@ -384,4 +400,8 @@ test('eval with scope', () => {
 
     comp(parseAndEvalWithScope('( 4 < 5 ) cond [ 44 ] [ 88 ] .',scope),NumObj(44))
     comp(parseAndEvalWithScope('( 4 > 5 ) cond [ 44 ] [ 88 ] .',scope),NumObj(88))
+    comp(parseAndEvalWithScope('true .',scope),BoolObj(true))
+    comp(parseAndEvalWithScope('false .',scope),BoolObj(false))
+    comp(parseAndEvalWithScope('nil .',scope),NilObj())
+
 })
