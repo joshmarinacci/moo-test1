@@ -138,11 +138,13 @@ let Integer = OneOrMore(Digit)
 let Identifier = OneOrMore(Letter)
 let Whitespace = Optional(OneOrMore(Lit(" ")))
 let StringLiteral = Seq(Lit('"'),ZeroOrMore(Letter),Lit('"'))
-let Group = Lit("dummy")
-let Exp = Or(Integer,Identifier,StringLiteral,(input) => Group(input))
-Group = Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
+let RealExp = Lit("dummy")
+let Exp = (input:InputStream) => RealExp(input)
+let Group = Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
 let Statement = Seq(ZeroOrMore(Seq(Whitespace,Exp)),Whitespace,Lit("."))
 let Block = Seq(ZeroOrMore(Statement))
+// fix the recursion
+RealExp = Seq(Or(Integer,Identifier,StringLiteral,Group))
 
 function match(source:string, rule:Rule) {
     // console.log("=======")
@@ -208,6 +210,7 @@ test("parse group",() => {
     assert.ok(match("( id )",Group))
     assert.ok(match("( ( id ) )",Group))
     assert.ok(!match("( ( id ) ",Group))
+    assert.ok(!match("( ( 4 add 5 ) ",Group))
 })
 test("parse statement",() => {
     assert.ok(match(".",Statement))
