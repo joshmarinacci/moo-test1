@@ -132,19 +132,22 @@ function Seq(...rules:Rule[]):Rule {
     }
 }
 
+let Whitespace = Optional(OneOrMore(Lit(" ")))
 let Digit = Range("0","9");
 let Letter = Range("a","z");
-let Integer = OneOrMore(Digit)
-let Identifier = OneOrMore(Letter)
-let Whitespace = Optional(OneOrMore(Lit(" ")))
-let StringLiteral = Seq(Lit('"'),ZeroOrMore(Letter),Lit('"'))
+let QQ = Lit('"')
+let Underscore = Lit("_")
+let Integer = OneOrMore(Or(Digit,Underscore))
+let Identifier = Seq(Letter,ZeroOrMore(Or(Letter,Digit,Underscore)))
+let StringLiteral = Seq(QQ,ZeroOrMore(Letter),QQ)
+let Operator = Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"))
 let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
 let Group = Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
 let Statement = Seq(ZeroOrMore(Seq(Whitespace,Exp)),Whitespace,Lit("."))
 let Block = Seq(ZeroOrMore(Statement))
 // fix the recursion
-RealExp = Seq(Or(Integer,Identifier,StringLiteral,Group))
+RealExp = Seq(Or(Integer,Identifier,Operator,StringLiteral,Group))
 
 function match(source:string, rule:Rule) {
     // console.log("=======")
@@ -192,6 +195,15 @@ test("parse identifier",() => {
 test("parse string literal",() => {
     assert.ok(match(`"abc"`,StringLiteral))
     assert.ok(match(`""`,StringLiteral))
+})
+test("parse operators",() => {
+    assert.ok(match("+",Operator))
+    assert.ok(match("-",Operator))
+    assert.ok(match("*",Operator))
+    assert.ok(match("/",Operator))
+    assert.ok(!match("%",Operator))
+    assert.ok(!match("[",Operator))
+    assert.ok(!match(".",Operator))
 })
 
 test("handle whitespace",() => {
