@@ -37,6 +37,11 @@ function OneOrMore(rule:Rule):Rule {
         }
     }
 }
+
+function Or(rule:Rule, rule:Rule) {
+
+}
+
 function Seq(...rules:Rule[]):Rule {
     return function (value:string) {
         for(const i in rules) {
@@ -56,6 +61,9 @@ let AstInt = (value:number)=> ({type:'int',value:value});
 let AstStr = (value:string)=> ({type:'str',value:value});
 
 let Integer = OneOrMore(Digit)
+let Identifier = OneOrMore(Letter)
+
+let Exp = Or(Integer,Identifier)
 
 class InputStream {
     private readonly position: number;
@@ -117,6 +125,16 @@ test("parse integer",() => {
     assert.ok(Integer(new InputStream("a",0)).failed())
     assert.equal(Integer(new InputStream("44",0)).source(),"44")
     assert.equal(Integer(new InputStream("44845a",0)).source(),"44845")
+    assert.ok(Integer(new InputStream("a44845",0)).failed())
+})
+
+test("parse exp",() => {
+    assert.ok(Exp(new InputStream("4",0)).succeeded())
+    // assert.ok(Integer(new InputStream("44",0)).succeeded())
+    // assert.ok(Integer(new InputStream("a",0)).failed())
+    // assert.equal(Integer(new InputStream("44",0)).source(),"44")
+    // assert.equal(Integer(new InputStream("44845a",0)).source(),"44845")
+    // assert.ok(Integer(new InputStream("a44845",0)).failed())
     // assert.ok(matches("44"))
     // assert.ok(!matches("4a"))
     // assert.deepEqual(parse("4"),AstInt(4),'4 not parsed');
