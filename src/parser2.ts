@@ -29,6 +29,7 @@ class ParseResult {
     used:number;
     success: boolean;
     readonly slice: string;
+    production: unknown
     constructor(input:string, position:number,used:number, success:boolean) {
         this.input = input;
         this.position = position;
@@ -87,12 +88,19 @@ function OneOrMore(rule:Rule):Rule {
             return input.fail()
         }
         let i = 0;
+        let prods = []
         while(true) {
             i+=1
             let pass = rule(input.advance(i))
-            // l(`checking ${i}`,input.currentToken(), pass)
-            // l("current input ",input)
-            if (!pass.succeeded()) return input.okay(i)
+            if (!pass.succeeded()) {
+                let res = input.okay(i)
+                res.production = prods
+                return res
+            } else {
+                if (pass.production) {
+                    prods.push(pass.production)
+                }
+            }
         }
     }
 }
@@ -122,28 +130,56 @@ function Or(...rules:Rule[]) {
 function Seq(...rules:Rule[]):Rule {
     return function seq(input:InputStream) {
         let count = 0
+        let prods = []
         for(const i in rules) {
             let rule = rules[i];
             let pass = rule(input.advance(count))
             if (pass.failed()) return pass
             count += pass.used
+            if(pass.production) {
+                prods.push(pass.production)
+            }
         }
-        return input.okay(count)
+        let pass = input.okay(count)
+        pass.production = prods
+        return pass
     }
 }
 
+function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown) {
+    return function (input:InputStream) {
+        let pass = rule(input)
+        if (pass.succeeded()) {
+            let prod = cb(pass)
+            if(prod) {
+                pass.production = prod
+            }
+        }
+        return pass
+    }
+}
 let Whitespace = Optional(OneOrMore(Lit(" ")))
 let Digit = Range("0","9");
 let Letter = Range("a","z");
 let QQ = Lit('"')
 let Underscore = Lit("_")
-let Integer = OneOrMore(Or(Digit,Underscore))
-let Identifier = Seq(Letter,ZeroOrMore(Or(Letter,Digit,Underscore)))
-let StringLiteral = Seq(QQ,ZeroOrMore(Letter),QQ)
-let Operator = Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"))
+let Integer = withProduction(OneOrMore(Or(Digit,Underscore)),(res) => {
+    return ({type:'num',value:parseInt(res.slice)})
+})
+let Identifier = withProduction(Seq(Letter,ZeroOrMore(Or(Letter,Digit,Underscore))),(res)=>{
+    return res.slice
+})
+let StringLiteral = withProduction(Seq(QQ,ZeroOrMore(Letter),QQ),(res) => {
+    return ({type:'str', value:res.slice.substring(1,res.slice.length-1)})
+})
+let Operator = withProduction(Or(Lit("+"),Lit("-"),Lit("*"),Lit("/")),(res)=>{
+    return res.slice
+})
 let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
-let Group = Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
+let Group = withProduction(Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace),(res)=>{
+    return ({type:'group',value:res.production})
+})
 let Statement = Seq(ZeroOrMore(Seq(Whitespace,Exp)),Whitespace,Lit("."))
 let Block = Seq(ZeroOrMore(Statement))
 // fix the recursion
@@ -154,6 +190,26 @@ function match(source:string, rule:Rule) {
     let input = new InputStream(source,0);
     return rule(input).succeeded()
 }
+function matchOutput(source:string, rule:Rule) {
+    let input = new InputStream(source,0);
+    return rule(input).slice
+}
+function produces(source:string, rule:Rule) {
+    let input = new InputStream(source,0);
+    return rule(input).production
+}
+
+type LitNumNode = {
+    type:'num',
+    value:number
+}
+type LitStrNode = {
+    type:'str',
+    value:string
+}
+type ASTNode = LitNumNode | LitStrNode
+const ASTLitNum = (value:number) => ({type:'num', value})
+const ASTStrNum = (value:string) => ({type:'str',value})
 
 test ("test parser itself", () => {
     assert.ok(match("a",Lit("a")))
@@ -180,10 +236,11 @@ test("parse integer",() => {
     assert.ok(match("4",Digit))
     assert.ok(match("44",Integer))
     assert.ok(!match("a",Integer))
-    assert.equal(Integer(new InputStream("44",0)).source(),"44")
-    assert.equal(Integer(new InputStream("44845a",0)).source(),"44845")
-    assert.equal(Integer(new InputStream("44845a",0)).used,5)
+    assert.equal(matchOutput("4",Digit),"4")
+    assert.equal(matchOutput("44",Integer),"44")
+    assert.equal(matchOutput("44845a",Integer),"44845")
     assert.ok(!match("a44845",Integer))
+    assert.deepStrictEqual(produces("44",Integer),ASTLitNum(44))
 })
 test("parse identifier",() => {
     assert.ok(match("abc",Identifier))
@@ -195,6 +252,8 @@ test("parse identifier",() => {
 test("parse string literal",() => {
     assert.ok(match(`"abc"`,StringLiteral))
     assert.ok(match(`""`,StringLiteral))
+    assert.deepStrictEqual(produces(`"abc"`,StringLiteral),ASTStrNum("abc"))
+    assert.deepStrictEqual(produces(`""`,StringLiteral),ASTStrNum(""))
 })
 test("parse operators",() => {
     assert.ok(match("+",Operator))
@@ -204,6 +263,7 @@ test("parse operators",() => {
     assert.ok(!match("%",Operator))
     assert.ok(!match("[",Operator))
     assert.ok(!match(".",Operator))
+    assert.equal(produces("+",Operator),"+")
 })
 
 test("handle whitespace",() => {
@@ -237,3 +297,4 @@ test("block",() => {
     assert.ok(match("[foo]",Block))
     assert.ok(match("[foo .]",Block))
 })
+
