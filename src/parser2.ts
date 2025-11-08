@@ -1,13 +1,51 @@
 import test from "node:test";
 import assert from "node:assert";
 
-type char = number
 type Rule = (input:InputStream) => ParseResult;
-const debug = true
-const l = (...args:any[]) => {
-    if(debug) console.log("DEBUG",...args)
+class InputStream {
+    private readonly position: number;
+    readonly input: string;
+    constructor(input:string, position: number) {
+        this.input = input;
+        this.position = position;
+    }
+    currentToken():string{
+        return this.input[this.position]
+    }
+    okay(used:number):ParseResult{
+        let res = new ParseResult(this.input,this.position,used,true)
+        return res
+    }
+    fail():ParseResult{
+        return new ParseResult(this.input,this.position,0,false)
+    }
+    advance(i: number) {
+        return new InputStream(this.input,this.position+i)
+    }
 }
-// const Char = (ch:string):number => ch.charCodeAt(0);
+class ParseResult {
+    readonly input: string
+    position: number;
+    used:number;
+    success: boolean;
+    readonly slice: string;
+    constructor(input:string, position:number,used:number, success:boolean) {
+        this.input = input;
+        this.position = position;
+        this.used = used
+        this.success = success;
+        this.slice = this.input.slice(this.position,this.position+this.used)
+    }
+    succeeded():boolean {
+        return this.success;
+    }
+    source():string {
+        return this.input.slice(this.position,this.position+this.used);
+    }
+    failed() {
+        return !this.success;
+    }
+}
 
 function Lit(value:string) {
     return function (input:InputStream) {
@@ -32,6 +70,16 @@ function Range(start: string, end: string):Rule {
         }
     };
 }
+function ZeroOrMore(rule:Rule):Rule {
+    return function(input:InputStream) {
+        let i = 0;
+        while(true) {
+            let pass = rule(input.advance(i))
+            if (!pass.succeeded()) return input.okay(i)
+            i+=1
+        }
+    }
+}
 function OneOrMore(rule:Rule):Rule {
     return function(input:InputStream) {
         let pass = rule(input);
@@ -45,6 +93,16 @@ function OneOrMore(rule:Rule):Rule {
             // l(`checking ${i}`,input.currentToken(), pass)
             // l("current input ",input)
             if (!pass.succeeded()) return input.okay(i)
+        }
+    }
+}
+function Optional(rule:Rule):Rule {
+    return function(input:InputStream) {
+        let pass = rule(input);
+        if(pass.succeeded()) {
+            return pass
+        } else {
+            return input.okay(0)
         }
     }
 }
@@ -76,68 +134,13 @@ function Seq(...rules:Rule[]):Rule {
 
 let Digit = Range("0","9");
 let Letter = Range("a","z");
-
-let AstInt = (value:number)=> ({type:'int',value:value});
-let AstStr = (value:string)=> ({type:'str',value:value});
-
 let Integer = OneOrMore(Digit)
 let Identifier = OneOrMore(Letter)
-
+let Whitespace = Optional(OneOrMore(Lit(" ")))
 let Exp = Or(Integer,Identifier)
-let Group = Seq(Lit("("),Exp,Lit(")"))
+let Group = Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
+let StringLiteral = Seq(Lit('"'),ZeroOrMore(Letter),Lit('"'))
 
-class InputStream {
-    private readonly position: number;
-    readonly input: string;
-    constructor(input:string, position: number) {
-        this.input = input;
-        this.position = position;
-    }
-    currentToken():string{
-        return this.input[this.position]
-    }
-    okay(used:number):ParseResult{
-        let res = new ParseResult(this.input,this.position,used,true)
-        return res
-    }
-    fail():ParseResult{
-        return new ParseResult(this.input,this.position,0,false)
-    }
-    advance(i: number) {
-        return new InputStream(this.input,this.position+i)
-    }
-}
-class ParseResult {
-    readonly input: string
-    position: number;
-    used:number;
-    success: boolean;
-    constructor(input:string, position:number,used:number, success:boolean) {
-        this.input = input;
-        this.position = position;
-        this.used = used
-        this.success = success;
-    }
-    succeeded():boolean {
-        return this.success;
-    }
-    source():string {
-        return this.input.slice(this.position,this.position+this.used);
-    }
-    failed() {
-        return !this.success;
-    }
-}
-
-// function matches(input:string):ParseResult {
-//     let result:ParseResult = Integer(input)
-//     l(`Integer matches? ${input} => ${result}`)
-//     return result
-// }
-// function parse(input: string) {
-//     l("parsing",input)
-//     l("matching", Integer(input))
-// }
 function match(source:string, rule:Rule) {
     // console.log("=======")
     let input = new InputStream(source,0);
@@ -161,6 +164,9 @@ test ("test parser itself", () => {
     assert.ok(match("1",OneOrMore(Range("0","9"))))
     assert.ok(!match("z",OneOrMore(Range("0","9"))))
     assert.ok(match("8z",OneOrMore(Range("0","9"))))
+    assert.ok(match("ab",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+    assert.ok(match("b",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+    assert.ok(!match("a",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
 })
 test("parse integer",() => {
     assert.ok(match("4",Digit))
@@ -178,22 +184,23 @@ test("parse identifier",() => {
     assert.ok(!match("1abc",Identifier))
     assert.ok(!match("_abc",Identifier))
 })
+test("parse string literal",() => {
+    assert.ok(match(`"abc"`,StringLiteral))
+    assert.ok(match(`""`,StringLiteral))
+})
 
-test("parse exp",() => {
-    assert.ok(match("4",Exp))
-    assert.equal(Exp(new InputStream("4",0)).source(),'4')
-    assert.equal(Exp(new InputStream("4",0)).used,1)
+test("handle whitespace",() => {
+    assert.ok(match("4",Integer))
+    assert.ok(match("4 ",Integer))
+    assert.ok(match(" ", Lit(" ")))
+    assert.ok(match("     ", OneOrMore(Lit(" "))))
+    assert.ok(match("     ", Whitespace))
+    assert.ok(match(" 4",Seq(Whitespace,Integer)))
+    assert.ok(match(" 4 ",Seq(Whitespace,Integer)))
+    assert.ok(match(" 4 5",Seq(Whitespace,Integer,Whitespace,Integer,Whitespace)))
+})
+test("parse group",() => {
     assert.ok(match("(4)",Group))
     assert.ok(match("(id)",Group))
-    // assert.equal(Group(new InputStream("(4)",0)).used,3)
-    // assert.ok(Integer(new InputStream("44",0)).succeeded())
-    // assert.ok(Integer(new InputStream("a",0)).failed())
-    // assert.equal(Integer(new InputStream("44",0)).source(),"44")
-    // assert.equal(Integer(new InputStream("44845a",0)).source(),"44845")
-    // assert.ok(Integer(new InputStream("a44845",0)).failed())
-    // assert.ok(matches("44"))
-    // assert.ok(!matches("4a"))
-    // assert.deepEqual(parse("4"),AstInt(4),'4 not parsed');
-    // assert.deepEqual(parse("44"),AstInt(44),'44 not parsed');
-    // assert.deepEqual(parse("a"),AstStr("a"));
+    assert.ok(match("( id )",Group))
 })
