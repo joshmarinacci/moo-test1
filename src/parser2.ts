@@ -161,7 +161,9 @@ function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown) {
         return pass
     }
 }
-let Whitespace = Optional(OneOrMore(Lit(" ")))
+let Whitespace = withProduction(
+    Optional(OneOrMore(Lit(" ")))
+    ,(res) => undefined) // remove all whitespace from the tree
 let Digit = Range("0","9");
 let Letter = Range("a","z");
 let QQ = Lit('"')
@@ -171,15 +173,13 @@ let Integer = withProduction(OneOrMore(Or(Digit,Underscore)),(res) => {
 })
 let Identifier = withProduction(
     Seq(Letter,ZeroOrMore(Or(Letter,Digit,Underscore)))
-    ,(res)=> {
-        return Id(res.slice)
-    })
+    ,(res)=> Id(res.slice))
 let StringLiteral = withProduction(
     Seq(QQ,ZeroOrMore(Letter),QQ)
     ,(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 let Operator = withProduction(
     Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"))
-    ,(res)=> res.slice)
+    ,(res)=> Id(res.slice)) // operators are identifiers too
 let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
 let Group = withProduction(
@@ -191,7 +191,13 @@ let Group = withProduction(
 let Statement = withProduction(
     Seq(ZeroOrMore(Seq(Whitespace,Exp)),Whitespace,Lit("."))
     ,(res)=>{
-        return {type:'stmt',value:res.production}
+        // flatten and filter out the undefineds
+        let vals = res.production as ASTNode[]
+        vals = vals.flat(10)
+        vals = vals.filter(v => v !== undefined)
+        // remove the period
+        vals.pop()
+        return Stmt(...vals)
     })
 let Block = Seq(ZeroOrMore(Statement))
 // fix the recursion
@@ -237,7 +243,7 @@ type GroupNode = {
 }
 type ASTNode = LitNumNode | LitStrNode | StatementNode | IdentifierNode | GroupNode
 const Num = (value:number) => ({type:'num', value} as LitNumNode)
-const Str = (value:string) => ({type:'str',value})
+const Str = (value:string) => ({type:'str',value} as LitStrNode)
 const Stmt = (...args:ASTNode[]) => ({type:'stmt', value:Array.from(args)})
 const Id =(value:string) => ({type:'id',value:value} as IdentifierNode)
 const Grp = (...args:ASTNode[]) => ({type:'group',value: Array.from(args)}as GroupNode)
@@ -295,7 +301,7 @@ test("parse operators",() => {
     assert.ok(!match("%",Operator))
     assert.ok(!match("[",Operator))
     assert.ok(!match(".",Operator))
-    assert.equal(produces("+",Operator),"+")
+    assert.deepStrictEqual(produces("+",Operator),Id("+"))
 })
 
 test("handle whitespace",() => {
@@ -330,17 +336,15 @@ test("parse group",() => {
 
 test("parse statement",() => {
     assert.ok(match(".",Statement))
-    // assert.deepStrictEqual(produces(".",Statement),Stmt())
+    assert.deepStrictEqual(produces(".",Statement),Stmt())
     assert.ok(match("foo.",Statement))
     assert.deepStrictEqual(produces("foo",RealExp),Id("foo"))
-    // assert.deepStrictEqual(produces("abcdef",Statement),Stmt(Id("abcdef")))
+    assert.deepStrictEqual(produces("abcdef.",Statement),Stmt(Id("abcdef")))
     assert.ok(match("foo .",Statement))
-    assert.ok(match("foo bar .",Statement))
+    assert.ok(match("bar foo .",Statement))
     assert.ok(match("4 add 5 .",Statement))
-    // assert.deepStrictEqual(produces("4 .",Statement),Stmt(Num(4)))
-    // assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt({
-    //     type:'stmt',value:[ASTLitNum(4),"add",ASTLitNum(5)]
-    // })
+    assert.deepStrictEqual(produces("4 .",Statement),Stmt(Num(4)))
+    assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
     assert.ok(match("foo bar .",Statement))
 })
 test("block",() => {
