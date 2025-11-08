@@ -185,21 +185,28 @@ let Exp = (input:InputStream) => RealExp(input)
 let Group = withProduction(
     Seq(Lit("("),Whitespace,Exp,Whitespace,Lit(")"),Whitespace)
     ,(res)=>{
-        let value = res.production as Array<ASTNode>
+        let value = res.production as Array<Ast>
         return Grp(value[2])
     })
 let Statement = withProduction(
     Seq(ZeroOrMore(Seq(Whitespace,Exp)),Whitespace,Lit("."))
     ,(res)=>{
         // flatten and filter out the undefineds
-        let vals = res.production as ASTNode[]
+        let vals = res.production as Ast[]
+        // console.log("statement before",vals)
         vals = vals.flat(10)
         vals = vals.filter(v => v !== undefined)
         // remove the period
         vals.pop()
+        // console.log("statement after",vals)
         return Stmt(...vals)
     })
-let Block = Seq(ZeroOrMore(Statement))
+let Block = withProduction(
+    Seq(Lit("["),ZeroOrMore(Statement),Lit("]"),Whitespace)
+    ,(res) =>{
+        // console.log("block producting",res.production[1])
+        return Blk(... res.production[1])
+    })
 // fix the recursion
 RealExp = withProduction(
     Or(Integer,Identifier,Operator,StringLiteral,Group)
@@ -221,32 +228,37 @@ function produces(source:string, rule:Rule) {
     return rule(input).production
 }
 
-type LitNumNode = {
+type NumAst = {
     type:'num',
     value:number
 }
-type LitStrNode = {
+type StrAst = {
     type:'str',
     value:string
 }
-type StatementNode = {
+type StmtAst = {
     type:'stmt',
-    value:ASTNode[]
+    value:Ast[]
 }
-type IdentifierNode = {
+type IdAst = {
     type:'id',
     value:string
 }
-type GroupNode = {
+type GroupAst = {
     type:'group',
-    value:ASTNode[]
+    value:Ast[]
 }
-type ASTNode = LitNumNode | LitStrNode | StatementNode | IdentifierNode | GroupNode
-const Num = (value:number) => ({type:'num', value} as LitNumNode)
-const Str = (value:string) => ({type:'str',value} as LitStrNode)
-const Stmt = (...args:ASTNode[]) => ({type:'stmt', value:Array.from(args)})
-const Id =(value:string) => ({type:'id',value:value} as IdentifierNode)
-const Grp = (...args:ASTNode[]) => ({type:'group',value: Array.from(args)}as GroupNode)
+type BlockAst = {
+    type:'block',
+    value:Ast[]
+}
+type Ast = NumAst | StrAst | StmtAst | IdAst | GroupAst | BlockAst
+const Num = (value:number) => ({type:'num', value} as NumAst)
+const Str = (value:string) => ({type:'str',value} as StrAst)
+const Stmt = (...args:Ast[]) => ({type:'stmt', value:Array.from(args)} as StmtAst)
+const Blk = (...args:Ast[]) => ({type:'block', value:Array.from(args)} as BlockAst)
+const Id =(value:string) => ({type:'id',value:value} as IdAst)
+const Grp = (...args:Ast[]) => ({type:'group',value: Array.from(args)}as GroupAst)
 
 test ("test parser itself", () => {
     assert.ok(match("a",Lit("a")))
@@ -349,7 +361,9 @@ test("parse statement",() => {
 })
 test("block",() => {
     assert.ok(match("[]",Block))
-    assert.ok(match("[foo]",Block))
-    assert.ok(match("[foo .]",Block))
+    // assert.ok(match("[foo]",Block))
+    assert.ok(match("[foo.]",Block))
+    assert.deepStrictEqual(produces("[foo.]",Block),Blk(Stmt(Id("foo"))))
+    assert.deepStrictEqual(produces("[foo. bar.]",Block),Blk(Stmt(Id("foo")),Stmt(Id("bar"))))
 })
 
