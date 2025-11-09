@@ -91,6 +91,16 @@ export function ZeroOrMore(rule:Rule):Rule {
         }
     }
 }
+export function AnyNot(rule:Rule):Rule {
+    return function any_not(input:InputStream) {
+        let res = rule(input)
+        if(res.succeeded()) {
+            return input.fail()
+        } else {
+            return input.okay(1)
+        }
+    }
+}
 export function OneOrMore(rule:Rule):Rule {
     return function(input:InputStream) {
         let pass = rule(input);
@@ -168,14 +178,14 @@ export let Digit = Range("0","9");
 let Letter = Or(Range("a","z"),Range("A","Z"));
 let QQ = Lit('"')
 let Underscore = Lit("_")
-export let Integer = withProduction(OneOrMore(Or(Digit,Underscore)),(res) => {
-    return ({type:'num',value:parseInt(res.slice)})
-})
+export let Integer = withProduction(
+    OneOrMore(Or(Digit,Underscore))
+    ,(res) => Num(parseInt(res.slice)))
 export let Identifier = withProduction(
     Seq(Letter,ZeroOrMore(Or(Letter,Digit,Underscore)))
     ,(res)=> Id(res.slice))
 export let StringLiteral = withProduction(
-    Seq(QQ,ZeroOrMore(Letter),QQ)
+    Seq(QQ,ZeroOrMore(AnyNot(QQ)),QQ)
     ,(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 export let Operator = withProduction(
     Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(">"),Lit(":="))

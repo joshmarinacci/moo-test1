@@ -1,33 +1,86 @@
-export type NumAst = {
-    type: 'num',
-    value: number,
+export class Ast {
+    toString():string {
+        return "hi there"
+    }
 }
-export type StrAst = {
-    type:'str',
-    value: string,
-}
-export type GroupAst = {
-    type:'group',
+
+class StmtAst extends Ast {
     value: Ast[]
+    type: 'stmt'
+    constructor(value:Ast[]) {
+        super()
+        this.type = 'stmt'
+        this.value = value
+    }
+    toString():string {
+        return "" + this.value.map(s => s.toString()).join(" ") + "."
+    }
 }
-export type StmtAst = {
-    type: 'stmt',
-    value: Ast[],
+class GroupAst extends Ast {
+    value: Ast[]
+    type: 'group'
+    constructor(value:Ast[]) {
+        super()
+        this.type = 'group'
+        this.value = value
+    }
+    toString() {
+        return "" + this.value.map(s => s.toString()).join(" ") + "."
+    }
 }
-export type IdAst = {
-    type:'id',
-    value:string,
+class BlockAst extends Ast {
+    value: Ast[]
+    type: 'block'
+    constructor(value:Ast[]) {
+        super()
+        this.type = 'block'
+        this.value = value
+    }
+    toString() {
+        return "" + this.value.map(s => s.toString()).join(" ") + "."
+    }
 }
-export type BlockAst = {
-    type:'block',
-    value: Ast[],
+class NumAst extends Ast {
+    value: number
+    type: 'num'
+    constructor(value:number) {
+        super()
+        this.type = 'num'
+        this.value = value
+    }
+    toString() {
+        return "" + this.value
+    }
 }
-export type Ast = GroupAst | BlockAst | StmtAst | NumAst | StrAst | IdAst
+class StrAst extends Ast {
+    value: string
+    type: 'str'
+    constructor(value:string) {
+        super()
+        this.type = 'str'
+        this.value = value
+    }
+    toString() {
+        return "Number" + this.value
+    }
+}
+class IdAst extends Ast {
+    value: string
+    type: 'id'
+    constructor(value:string) {
+        super()
+        this.type = 'id'
+        this.value = value
+    }
+    toString() {
+        return "" + this.value
+    }
+}
 
 
-export const Num = (value: number): NumAst => ({type: 'num', value})
-export const Str = (value: string): StrAst => ({type: 'str', value})
-export const Id = (value: string): IdAst => ({type: 'id', value})
-export const Stmt = (...args: Ast[]): StmtAst => ({type: 'stmt', value: Array.from(args)})
-export const Grp = (...args: Ast[]): GroupAst => ({type: 'group', value: Array.from(args)})
-export const Blk = (...args: Ast[]): BlockAst => ({type: 'block', value: Array.from(args)})
+export const Num = (value: number) => new NumAst(value)
+export const Str = (value: string) => new StrAst(value)
+export const Id = (value: string) => new IdAst(value)
+export const Stmt = (...args: Ast[]) => new StmtAst(args)
+export const Grp = (...args: Ast[]) => new GroupAst(args)
+export const Blk = (...args: Ast[]) => new BlockAst(args)

@@ -77,6 +77,7 @@ test("parse string literal",() => {
     assert.ok(match(`""`,StringLiteral))
     assert.deepStrictEqual(produces(`"abc"`,StringLiteral),Str("abc"))
     assert.deepStrictEqual(produces(`""`,StringLiteral),Str(""))
+    assert.deepStrictEqual(produces(`"a b c"`,StringLiteral),Str("a b c"))
 })
 test("parse operators",() => {
     assert.ok(match("+",Operator))
