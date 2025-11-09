@@ -114,7 +114,7 @@ test("parse expressions", () => {
         Stmt(Grp(Num(4),Id('<'),Num(5)))
     );
     assert.deepStrictEqual(
-        parse("[ 99 . ] "),
+        parseAst("[ 99 . ] "),
         Blk(Stmt(Num(99))),
     )
     assert.deepStrictEqual(

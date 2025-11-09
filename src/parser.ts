@@ -205,14 +205,14 @@ let Statement = withProduction(
         return Stmt(...vals)
     })
 let Block = withProduction(
-    Seq(Lit("["),ZeroOrMore(Statement),Optional(Exp),Lit("]"),WS)
+    Seq(Lit("["),ZeroOrMore(Statement),WS,Optional(Exp),Lit("]"),WS)
     ,(res) =>{
         // console.log("block producting",res.production[1])
         return Blk(... res.production[1])
     })
 // fix the recursion
 RealExp = withProduction(
-    Or(Integer,Identifier,Operator,StringLiteral,Group)
+    Or(Integer,Identifier,Operator,StringLiteral,Group,Block)
     ,(res)=>{
     return res.production
 })
@@ -331,6 +331,7 @@ test("block",() => {
     assert.ok(match("[]",Block))
     assert.ok(match("[foo]",Block))
     assert.ok(match("[foo.]",Block))
+    assert.ok(match("[ foo . ]",Block))
     assert.deepStrictEqual(produces("[foo.]",Block),Blk(Stmt(Id("foo"))))
     assert.deepStrictEqual(produces("[foo. bar.]",Block),Blk(Stmt(Id("foo")),Stmt(Id("bar"))))
 })
@@ -339,5 +340,6 @@ test('parse expression',() => {
     assert.deepStrictEqual(parseAst("(4)"),Grp(Num(4)))
     assert.deepStrictEqual(parseAst("(add)"),Grp(Id("add")))
     assert.deepStrictEqual(parseAst("(4 + 5)"),Grp(Num(4),Id("+"),Num(5)))
+    assert.deepStrictEqual(parseAst("[foo.]"),Blk(Stmt(Id("foo"))))
 })
 
