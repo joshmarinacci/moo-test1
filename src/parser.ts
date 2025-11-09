@@ -164,7 +164,7 @@ function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown) {
     }
 }
 let WS = withProduction(
-    Optional(OneOrMore(Lit(" ")))
+    Optional(OneOrMore(Or(Lit(" "),Lit("\n"))))
     ,(res) => undefined) // remove all whitespace from the tree
 let Digit = Range("0","9");
 let Letter = Or(Range("a","z"),Range("A","Z"));

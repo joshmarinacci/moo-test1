@@ -281,7 +281,9 @@ test('eval with scope', () => {
     comp(parseAndEvalWithScope('[ 88 . ] invoke .',scope),NumObj(88))
 
     comp(parseAndEvalWithScope('( 4 < 5 ) cond [ 44. ] [ 88. ] .',scope),NumObj(44))
-    comp(parseAndEvalWithScope('( 4 > 5 ) cond [ 44. ] [ 88. ] .',scope),NumObj(88))
+    comp(parseAndEvalWithScope(`( 4 > 5 ) 
+    cond [ 44. ]
+     [ 88. ] .`,scope),NumObj(88))
     comp(parseAndEvalWithScope('true .',scope),BoolObj(true))
     comp(parseAndEvalWithScope('false .',scope),BoolObj(false))
     comp(parseAndEvalWithScope('nil .',scope),NilObj())
