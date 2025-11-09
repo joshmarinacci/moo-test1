@@ -6,96 +6,6 @@ import type {Ast, BlockAst, GroupAst} from "./ast.ts"
 
 import {parseAst} from "./parser.ts"
 
-function p(...args: any[]) {
-    console.log(...args)
-}
-function parse(str: string):Ast {
-    let tokens = str.split(' ') // split by space
-        .filter(str => str.trim().length != 0) // strip empty string tokens
-    let exps = parseToken(tokens)
-    return exps[0]
-}
-function parseGroup(toks:string[]):GroupAst {
-    let stack:Ast[] = []
-    while(true) {
-        let tok = toks.shift()
-        if (tok == undefined) break;
-        if (tok == ")") {
-            break;
-        } else {
-            stack.push(parseOneToken(tok, toks))
-        }
-    }
-    return Grp(...stack)
-}
-function parseBlock(toks:string[]):BlockAst {
-    let stack:Ast[] = []
-    while(true) {
-        let tok = toks.shift()
-        if (tok == undefined) break;
-        if (tok == ".") {
-            collapseStatement(stack)
-            continue
-        }
-        if (tok == "]") {
-            break;
-        } else {
-            stack.push(parseOneToken(tok))
-        }
-    }
-    return Blk(...stack)
-}
-function parseOneToken(tok:string,toks:string[]):Ast {
-    if (tok.match(/^[0-9]+$/)) {
-        return Num(parseInt(tok))
-    }
-    if (tok.match(/^".+"$/)) {
-        return Str(tok.slice(1,tok.length-1))
-    }
-    if (tok.match(/^[a-zA-Z]+$/)) {
-        return Id(tok)
-    }
-    if (tok == "<" || tok == ">") {
-        return Id(tok)
-    }
-    if (tok == ":=") {
-        return Id(tok)
-    }
-    if (tok == '(') {
-        return parseGroup(toks)
-    }
-    console.warn(`unhandled token: ${tok}`)
-    throw new Error(`unhandled token ${tok}`)
-}
-function collapseStatement(stack: Ast[]) {
-    let temp:Ast[] = []
-    while(true) {
-        let node = stack.shift()
-        if (!node) {
-            break;
-        }
-        temp.push(node)
-    }
-    stack.push(Stmt(...temp))
-}
-function parseToken(toks:string[]):Ast[] {
-    let stack:Ast[] = []
-    while(true) {
-        let tok = toks.shift()
-        if (tok == undefined) {
-            break
-        }
-        switch (tok) {
-            case "(": stack.push(parseGroup(toks)); break;
-            case "[": stack.push(parseBlock(toks)); break;
-            case ".": collapseStatement(stack); break;
-            default: stack.push(parseOneToken(tok,toks));
-        }
-    }
-    return stack;
-}
-
-
 test("parse expressions", () => {
     assert.deepStrictEqual(parseAst(" 4 ."), Stmt(Num(4)))
     assert.deepStrictEqual(parseAst(" foo  ."), Stmt(Id("foo")))
@@ -118,7 +28,7 @@ test("parse expressions", () => {
         Stmt(Blk(Stmt(Num(99)))),
     )
     assert.deepStrictEqual(
-        parse(` ( 4 < 5 ) ifTrue [ 99 . ] .`),
+        parseAst(` ( 4 < 5 ) ifTrue [ 99 . ] .`),
         Stmt(
             Grp(Num(4),Id('<'),Num(5)),
             Id('ifTrue'),
@@ -133,17 +43,17 @@ test("parse expressions", () => {
         Stmt(Grp(Grp(Num(4),Id('<'),Num(5)),Id('<'),Num(6))))
 })
 
-class LangObject {
-    proto: LangObject | null
+class Obj {
+    proto: Obj | null
     slots: Map<string,any>
     name: string;
-    constructor(name:string,proto:LangObject|null){
+    constructor(name:string,proto:Obj|null){
         this.name = name;
         this.proto = proto
         this.slots = new Map()
     }
 
-    lookup_method(message: LangObject):unknown {
+    lookup_method(message: Obj):unknown {
         let name = message.slots.get('value')
         // p(`looking up message ${name} in ${this.name}`)
         if(this.slots.has(name)) {
@@ -158,58 +68,58 @@ class LangObject {
     }
 }
 
-let ObjectProto = new LangObject("Object",null);
-ObjectProto.slots.set('print', function(receiver:LangObject, message:LangObject, argument:LangObject) {
+let ObjectProto = new Obj("Object",null);
+ObjectProto.slots.set('print', function(receiver:Obj, message:Obj, argument:Obj) {
     console.log("OUTPUT ", receiver.name, 'is',receiver)
 })
-ObjectProto.slots.set('clone', function(receiver:LangObject, message:LangObject, argument:LangObject) {
-    return new LangObject("clone of " + receiver.name, receiver)
+ObjectProto.slots.set('clone', function(receiver:Obj, message:Obj, argument:Obj) {
+    return new Obj("clone of " + receiver.name, receiver)
 })
-ObjectProto.slots.set('setSlot', function(receiver:LangObject, message:LangObject, argument:LangObject, argument2:LangObject) {
+ObjectProto.slots.set('setSlot', function(receiver:Obj, message:Obj, argument:Obj, argument2:Obj) {
     let name = argument.slots.get('value')
     receiver.slots.set(name,argument2)
     return argument2
 })
-ObjectProto.slots.set('getSlot', function(receiver:LangObject, message:LangObject, argument:LangObject) {
+ObjectProto.slots.set('getSlot', function(receiver:Obj, message:Obj, argument:Obj) {
     let name = argument.slots.get('value')
     return receiver.slots.get(name)
 })
-let NumberProto = new LangObject("Number",ObjectProto);
-NumberProto.slots.set('print', function(receiver:LangObject, message:LangObject, argument:LangObject) {
+let NumberProto = new Obj("Number",ObjectProto);
+NumberProto.slots.set('print', function(receiver:Obj, message:Obj, argument:Obj) {
     console.log(`OUTPUT ${receiver.slots.get('value')}`)
     return StrObj(receiver.slots.get('value')+"")
 })
-NumberProto.slots.set('add',function(receiver:LangObject,message:LangObject,argument:LangObject) {
+NumberProto.slots.set('add',function(receiver:Obj,message:Obj,argument:Obj) {
     let a = receiver.slots.get('value') as number
     let b = argument.slots.get('value') as number
     return NumObj(a+b)
 })
-NumberProto.slots.set('+',function(receiver:LangObject,message:LangObject,argument:LangObject) {
+NumberProto.slots.set('+',function(receiver:Obj,message:Obj,argument:Obj) {
     let a = receiver.slots.get('value') as number
     let b = argument.slots.get('value') as number
     return NumObj(a+b)
 })
-NumberProto.slots.set('-',function(receiver:LangObject,message:LangObject,argument:LangObject) {
+NumberProto.slots.set('-',function(receiver:Obj,message:Obj,argument:Obj) {
     let a = receiver.slots.get('value') as number
     let b = argument.slots.get('value') as number
     return NumObj(a-b)
 })
-NumberProto.slots.set('<',function(receiver:LangObject,message:LangObject,argument:LangObject) {
+NumberProto.slots.set('<',function(receiver:Obj,message:Obj,argument:Obj) {
     let a = receiver.slots.get('value') as number
     let b = argument.slots.get('value') as number
     return BoolObj(a<b)
 })
-NumberProto.slots.set('>',function(receiver:LangObject,message:LangObject,argument:LangObject) {
+NumberProto.slots.set('>',function(receiver:Obj,message:Obj,argument:Obj) {
     let a = receiver.slots.get('value') as number
     let b = argument.slots.get('value') as number
     return BoolObj(a>b)
 })
-let StringProto = new LangObject("String",ObjectProto);
-StringProto.slots.set('print', function(rec,msg) {
+let StringProto = new Obj("String",ObjectProto);
+StringProto.slots.set('print', function(rec:Obj,msg:Obj) {
     console.log(`OUTPUT: ${rec.slots.get('value')}`)
 })
-let BooleanProto = new LangObject("Boolean",ObjectProto);
-BooleanProto.slots.set('cond', function(rec,msg, arg1, arg2) {
+let BooleanProto = new Obj("Boolean",ObjectProto);
+BooleanProto.slots.set('cond', function(rec:Obj,msg:Obj, arg1:Obj, arg2:Obj) {
     let val = rec.slots.get('value')
     if (val === true) {
         let invoke = arg1.slots.get('invoke')
@@ -220,48 +130,48 @@ BooleanProto.slots.set('cond', function(rec,msg, arg1, arg2) {
         return invoke(arg2, invoke,null)
     }
 })
-let NilProto = new LangObject("Nil",ObjectProto);
+let NilProto = new Obj("Nil",ObjectProto);
 
-function NumObj(value:number):LangObject {
-    let obj = new LangObject("NumberLiteral",NumberProto)
+function NumObj(value:number):Obj {
+    let obj = new Obj("NumberLiteral",NumberProto)
     obj.slots.set('value',value)
     return obj
 }
 
-function StrObj(value:string):LangObject {
-    let obj = new LangObject("StringLiteral",StringProto)
+function StrObj(value:string):Obj {
+    let obj = new Obj("StringLiteral",StringProto)
     obj.slots.set('value',value)
     return obj
 }
 
-function SymRef(value:string):LangObject {
-    let obj = new LangObject("SymbolReference",ObjectProto)
+function SymRef(value:string):Obj {
+    let obj = new Obj("SymbolReference",ObjectProto)
     obj.slots.set('value',value)
     return obj
 }
 
-function BoolObj(value:boolean):LangObject {
-    let obj = new LangObject("BooleanLiteral",BooleanProto)
+function BoolObj(value:boolean):Obj {
+    let obj = new Obj("BooleanLiteral",BooleanProto)
     obj.slots.set('value',value)
     return obj
 }
 
-function NilObj():LangObject {
-    let obj = new LangObject("NilLiteral",NilProto)
+function NilObj():Obj {
+    let obj = new Obj("NilLiteral",NilProto)
     obj.slots.set('value',NilProto)
     return obj
 }
 
-function BlockObj(value:Ast[]):LangObject {
-    let obj = new LangObject("BlockLiteral",ObjectProto)
+function BlockObj(value:Ast[]):Obj {
+    let obj = new Obj("BlockLiteral",ObjectProto)
     obj.slots.set('value',value)
-    obj.slots.set('invoke',function(rec:LangObject,msg,arg1, arg2) {
+    obj.slots.set('invoke',function(rec:Obj) {
         return evalAst(value[0],rec)
     })
     return obj
 }
 
-function evalAst(ast: Ast, scope:LangObject):LangObject {
+function evalAst(ast: Ast, scope:Obj):Obj {
     if (ast.type == 'num') {
         return NumObj(ast.value);
     }
@@ -282,7 +192,7 @@ function evalAst(ast: Ast, scope:LangObject):LangObject {
         let message = evalAst(ast.value[1], scope)
         let method = receiver.lookup_method(message)
         if (ast.value.length <= 2) {
-            if (method instanceof LangObject) {
+            if (method instanceof Obj) {
                 return method
             }
             return method(receiver,method,null)
@@ -301,7 +211,7 @@ function evalAst(ast: Ast, scope:LangObject):LangObject {
         let message = evalAst(ast.value[1], scope)
         let method = receiver.lookup_method(message)
         // console.log("method is", method)
-        if(method instanceof LangObject) {
+        if(method instanceof Obj) {
             if (method.name === 'BlockLiteral') {
                 // console.log("Method is a block literal")
                 method = method.slots.get('invoke')
@@ -327,7 +237,7 @@ type DeepStrictEqual<T> = (actual: unknown, expected:T, message?: string | Error
 let comp:DeepStrictEqual<unknown> = assert.deepStrictEqual;
 
 test('eval expressions', () => {
-    let scope = new LangObject("Global",ObjectProto)
+    let scope = new Obj("Global",ObjectProto)
     comp(evalAst(Num(4),scope),NumObj(4));
     comp(evalAst(Str("dog"),scope),StrObj("dog"));
     comp(evalAst(Stmt(Num(4),Id("add"),Num(5)),scope),NumObj(9));
@@ -337,9 +247,9 @@ test('eval expressions', () => {
     comp(evalAst(Stmt(Grp(Num(4),Id('add'),Num(5))),scope), NumObj(9))
 })
 
-function parseAndEvalWithScope(code: string, scope: LangObject):LangObject {
+function parseAndEvalWithScope(code: string, scope: Obj):Obj {
     // p(`eval with scope '${code}'`)
-    let ast = parse(code)
+    let ast = parseAst(code)
     // p(`ast is `,ast)
     let res = evalAst(ast, scope)
     // p("returning",res)
@@ -347,7 +257,7 @@ function parseAndEvalWithScope(code: string, scope: LangObject):LangObject {
 }
 
 test('eval with scope', () => {
-    let scope = new LangObject("Global",ObjectProto)
+    let scope = new Obj("Global",ObjectProto)
     scope.slots.set('Object',ObjectProto);
     scope.slots.set('Number',NumberProto);
     scope.slots.set('Boolean',BooleanProto);
@@ -366,12 +276,12 @@ test('eval with scope', () => {
     parseAndEvalWithScope('Dog setSlot "bark" [ "woof" print . ] .', scope);
     parseAndEvalWithScope('Dog bark .', scope);
 
-    comp(parseAndEvalWithScope('88',scope),NumObj(88))
+    comp(parseAndEvalWithScope('88.',scope),NumObj(88))
     comp(parseAndEvalWithScope('88 .',scope),NumObj(88))
     comp(parseAndEvalWithScope('[ 88 . ] invoke .',scope),NumObj(88))
 
-    comp(parseAndEvalWithScope('( 4 < 5 ) cond [ 44 ] [ 88 ] .',scope),NumObj(44))
-    comp(parseAndEvalWithScope('( 4 > 5 ) cond [ 44 ] [ 88 ] .',scope),NumObj(88))
+    comp(parseAndEvalWithScope('( 4 < 5 ) cond [ 44. ] [ 88. ] .',scope),NumObj(44))
+    comp(parseAndEvalWithScope('( 4 > 5 ) cond [ 44. ] [ 88. ] .',scope),NumObj(88))
     comp(parseAndEvalWithScope('true .',scope),BoolObj(true))
     comp(parseAndEvalWithScope('false .',scope),BoolObj(false))
     comp(parseAndEvalWithScope('nil .',scope),NilObj())

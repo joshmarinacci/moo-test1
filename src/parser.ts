@@ -180,7 +180,7 @@ let StringLiteral = withProduction(
     Seq(QQ,ZeroOrMore(Letter),QQ)
     ,(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 let Operator = withProduction(
-    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(":="))
+    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(">"),Lit(":="))
     ,(res)=> Id(res.slice)) // operators are identifiers too
 let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
@@ -205,7 +205,7 @@ let Statement = withProduction(
         return Stmt(...vals)
     })
 let Block = withProduction(
-    Seq(Lit("["),ZeroOrMore(Statement),WS,Optional(Exp),Lit("]"),WS)
+    Seq(Lit('['),ZeroOrMore(Statement),WS,Optional(Exp),Lit("]"),WS)
     ,(res) =>{
         // console.log("block producting",res.production[1])
         return Blk(... res.production[1])
@@ -291,6 +291,8 @@ test("parse operators",() => {
     assert.ok(!match("[",Operator))
     assert.ok(!match(".",Operator))
     assert.deepStrictEqual(produces("+",Operator),Id("+"))
+    assert.deepStrictEqual(produces("<",Operator),Id("<"))
+    assert.deepStrictEqual(produces(">",Operator),Id(">"))
     assert.deepStrictEqual(produces(":=",Operator),Id(":="))
 })
 
