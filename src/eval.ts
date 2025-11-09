@@ -4,6 +4,8 @@ import { Grp, Id, Num, Stmt, Str, Blk} from "./ast.ts"
 
 import type {Ast, BlockAst, GroupAst} from "./ast.ts"
 
+import {parseAst} from "./parser.ts"
+
 function p(...args: any[]) {
     console.log(...args)
 }
@@ -95,10 +97,10 @@ function parseToken(toks:string[]):Ast[] {
 
 
 test("parse expressions", () => {
-    assert.deepStrictEqual(parse(" 4  "), Num(4));
-    assert.deepStrictEqual(parse(" foo  "), Id("foo"));
-    assert.deepStrictEqual(parse(" <  "), Id("<"));
-    assert.deepStrictEqual(parse(` "dog"  `), Str("dog"));
+    assert.deepStrictEqual(parseAst(" 4 "), Num(4));
+    assert.deepStrictEqual(parseAst(" foo  "), Id("foo"));
+    assert.deepStrictEqual(parseAst(" <  "), Id("<"));
+    assert.deepStrictEqual(parseAst(` "dog"  `), Str("dog"));
     assert.deepStrictEqual(
         parse(" 4 < 5 . "),
         Stmt(Num(4),Id('<'),Num(5))

@@ -4,7 +4,7 @@ import {Num, Blk, Str, Grp, Id, Stmt} from "./ast.ts"
 import type {Ast} from "./ast.ts";
 
 type Rule = (input:InputStream) => ParseResult;
-class InputStream {
+export class InputStream {
     private readonly position: number;
     readonly input: string;
     constructor(input:string, position: number) {
@@ -25,13 +25,13 @@ class InputStream {
         return new InputStream(this.input,this.position+i)
     }
 }
-class ParseResult {
+export class ParseResult {
     readonly input: string
     position: number;
     used:number;
     success: boolean;
     readonly slice: string;
-    production: unknown
+    production: Ast
     constructor(input:string, position:number,used:number, success:boolean) {
         this.input = input;
         this.position = position;
@@ -180,7 +180,7 @@ let StringLiteral = withProduction(
     Seq(QQ,ZeroOrMore(Letter),QQ)
     ,(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 let Operator = withProduction(
-    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"))
+    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"))
     ,(res)=> Id(res.slice)) // operators are identifiers too
 let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
@@ -230,13 +230,10 @@ function produces(source:string, rule:Rule) {
     return rule(input).production
 }
 
-
-// const Num = (value:number) => ({type:'num', value} as NumAst)
-// const Str = (value:string) => ({type:'str',value} as StrAst)
-// const Stmt = (...args:Ast[]) => ({type:'stmt', value:Array.from(args)} as StmtAst)
-// const Blk = (...args:Ast[]) => ({type:'block', value:Array.from(args)} as BlockAst)
-// const Id =(value:string) => ({type:'id',value:value} as IdAst)
-// const Grp = (...args:Ast[]) => ({type:'group',value: Array.from(args)}as GroupAst)
+export function parseAst(source:string):Ast {
+    let input = new InputStream(source.trim(),0);
+    return RealExp(input).production
+}
 
 test ("test parser itself", () => {
     assert.ok(match("a",Lit("a")))
@@ -343,5 +340,8 @@ test("block",() => {
     assert.ok(match("[foo.]",Block))
     assert.deepStrictEqual(produces("[foo.]",Block),Blk(Stmt(Id("foo"))))
     assert.deepStrictEqual(produces("[foo. bar.]",Block),Blk(Stmt(Id("foo")),Stmt(Id("bar"))))
+})
+test('parse expression',() => {
+    assert.deepStrictEqual(parseAst("4"),Num(4))
 })
 
