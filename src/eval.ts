@@ -55,51 +55,22 @@ class Obj {
     }
 
     lookup_method(message: Obj):unknown {
-        // l.p("looking up message",message.slotsToString())
-        if (message instanceof Function) {
-            // l.p("message is a function")
-            return message
-        }
-        let name = message.slots.get('value') as string
-        // p(`looking up message ${name} in ${this.name}`)
-        if(this.slots.has(name)) {
-            return this.slots.get(name)
-        } else {
-            if (this.proto == null) {
-                throw new Error(`method '${name}' not found`)
-            } else {
-                return this.proto.lookup_method(message)
-            }
-        }
+        let name = message._get_js_slot('value') as string
+        if(this.slots.has(name)) return this.slots.get(name)
+        if (this.proto) return this.proto.lookup_method(message)
+        throw new Error(`method '${name}' not found`)
     }
 
-    slotsToString() {
-        return 'Obj: '+Array.from(this.slots.entries())
-            .map(([k,v],i) => {
-                if (v instanceof Function) {
-                    return `${k}:JSFunction(${v.name})`
-                }
-              return `${k}:${v}`
-            })
-            .join(", ")// + ": proto "+ (this.proto?this.proto.slotsToString():"none")
-    }
     toString():string {
         return `Obj{${this.name} ${this.slots.get('value')}}`
     }
 
     lookup_symbol(value: string):Obj {
         if (value === 'self') return this
-        if (this.slots.has(value)) {
-            return this.slots.get(value)
-        }
-        if(this.proto == null) {
-            // throw new Error(`symbol ${value} not found`)
-            console.log(`not found in scope ${value}`)
-            // console.trace("here")
-            return SymRef(value)
-        } else {
-            return this.proto.lookup_symbol(value)
-        }
+        if (this.slots.has(value)) return this.slots.get(value) as Obj
+        if (this.proto) return this.proto.lookup_symbol(value)
+        console.log(`not found in scope ${value}`)
+        return SymRef(value)
     }
 
     _set_slots(slots: Record<string, unknown>) {
@@ -111,6 +82,9 @@ class Obj {
     _get_js_slot(name:string):unknown {
         return this.slots.get(name)
     }
+    _set_js_slot(name:string, value:unknown) {
+        this.slots.set(name,value)
+    }
 }
 
 let ObjectProto = new Obj("Object",null);
@@ -118,37 +92,36 @@ let NilProto = new Obj("Nil",ObjectProto);
 let StringProto = new Obj("String",ObjectProto);
 
 
-ObjectProto.slots.set('print', function print(receiver:Obj, message:Obj, argument:Obj) {
-    console.log("Object: OUTPUT ", receiver.name, 'is',receiver)
+type JSFun = (receiver:Obj, ...args:Obj[]) => Obj
+function mkJsFunc(name:string, fun:JSFun):Obj {
+    let js_fun = new Obj("JSFun",ObjectProto);
+    let str =  new Obj("StringLiteral", StringProto, {'value': name})
+    js_fun.slots.set('name',str)
+    js_fun._set_js_slot('js',fun)
+    return js_fun
+}
+
+ObjectProto.slots.set('print', mkJsFunc('print', (rec) => {
+    console.log("Object: OUTPUT ", rec.name, 'is',rec)
     return NilObj()
-})
-ObjectProto.slots.set('clone', function(receiver:Obj, message:Obj, argument:Obj) {
-    return new Obj("clone of " + receiver.name, receiver)
-})
-ObjectProto.slots.set('setSlot', function(receiver:Obj, message:Obj, argument:Obj, argument2:Obj) {
-    let name = argument.slots.get('value')
+}))
+ObjectProto.slots.set('clone', mkJsFunc('clone',(rec) => {
+    return new Obj("clone of " + rec.name, rec)
+}))
+ObjectProto.slots.set('setSlot', mkJsFunc('setSlot', (rec:Obj, arg:Obj, arg2:Obj) => {
+    let name = arg._get_js_slot('value') as string
     if (name) {
-        receiver.slots.set(name, argument2)
+        rec.slots.set(name, arg2)
     } else {
         console.warn("no value!")
     }
-    return argument2
-})
-ObjectProto.slots.set('getSlot', function(receiver:Obj, message:Obj, argument:Obj) {
-    let name = argument.slots.get('value')
-    return receiver.slots.get(name)
-})
+    return arg2
+}))
+ObjectProto.slots.set('getSlot', mkJsFunc('getSlot', (rec, arg) => {
+    let name = arg._get_js_slot('value') as string
+    return rec.slots.get(name) as Obj
+}))
 
-
-
-type JSFun = (receiver:Obj, message:Obj, argument:Obj) => Obj
-function mkJsFunc(name:string, fun:JSFun):Obj {
-    let jsfun = new Obj("JSFun",ObjectProto);
-    let str =  new Obj("StringLiteral", StringProto, {'value': name})
-    jsfun.slots.set('name',str)
-    jsfun.slots.set('js',fun)
-    return jsfun
-}
 
 type BinNumOp = (a:number, b:number) => number
 type BinBoolOp = (a:number, b:number) => boolean
@@ -167,18 +140,18 @@ let NumberProto = new Obj("Number",ObjectProto, {
         console.log(`Number: OUTPUT ${rec.slots.get('value')}`)
         return StrObj(rec.slots.get('value') + "")
     }),
-    'add': mkJsFunc('add', (rec, _msg, arg0) => js_binop_num(rec, arg0, (a, b) => a + b)),
-    '+': mkJsFunc('+',(rec,msg,arg0) => js_binop_num(rec,arg0,(a,b)=>a+b)),
-    '-': mkJsFunc('-',(rec,msg,arg0) => js_binop_num(rec,arg0,(a,b)=>a-b)),
-    '<': mkJsFunc('<',(rec,msg,arg0) => js_binop_bool(rec,arg0,(a,b)=>a<b)),
-    '>': mkJsFunc('>',(rec,msg,arg0) => js_binop_bool(rec,arg0,(a,b)=>a>b)),
+    'add': mkJsFunc('add', (rec, arg0) => js_binop_num(rec, arg0, (a, b) => a + b)),
+    '+': mkJsFunc('+',(rec,arg0) => js_binop_num(rec,arg0,(a,b)=>a+b)),
+    '-': mkJsFunc('-',(rec,arg0) => js_binop_num(rec,arg0,(a,b)=>a-b)),
+    '<': mkJsFunc('<',(rec,arg0) => js_binop_bool(rec,arg0,(a,b)=>a<b)),
+    '>': mkJsFunc('>',(rec,arg0) => js_binop_bool(rec,arg0,(a,b)=>a>b)),
 })
 StringProto._set_slots({
-    'print': mkJsFunc('print', (rec, msg): Obj => {
+    'print': mkJsFunc('print', (rec): Obj => {
         console.log(`String: OUTPUT: ${rec.slots.get('value')}`)
         return StrObj(rec.slots.get('value') + "")
     }),
-    'append':mkJsFunc('append', (rec,msg, arg) => {
+    'append':mkJsFunc('append', (rec, arg) => {
         let a = rec._get_js_slot('value') as string
         let b = arg._get_js_slot('value') as string
         return StrObj( a + b)
@@ -186,14 +159,14 @@ StringProto._set_slots({
 })
 
 let BooleanProto = new Obj("Boolean",ObjectProto, {
-    'cond':mkJsFunc('cond',(rec:Obj,msg:Obj,arg1:Obj,arg2:Obj) => {
+    'cond':mkJsFunc('cond',(rec:Obj, arg1:Obj,arg2:Obj) => {
         let val = rec._get_js_slot('value') as boolean
         if (val) {
             let invoke = arg1._get_js_slot('invoke') as Function
-            return invoke(arg1, invoke,null)
+            return invoke(arg1, null,null)
         } else {
             let invoke = arg2._get_js_slot('invoke') as Function
-            return invoke(arg2, invoke,null)
+            return invoke(arg2, null,null)
         }
     })
 });
@@ -206,13 +179,13 @@ const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'val
 const NilObj= () => new Obj("NilLiteral", NilProto, {'value': NilProto})
 
 function BlockObj(value:Ast[], slots:Record<string,Obj>):Obj {
-    let obj = new Obj("BlockLiteral",ObjectProto,slots)
-    obj.slots.set('value',value)
-    obj.slots.set('invoke',function invoke(rec:Obj) {
-        let scope = new Obj("block-scope",rec.slots.get('scope'))
+    let obj = new Obj("BlockLiteral",ObjectProto, slots)
+    // obj.slots.set('value',value)
+    obj.slots.set('invoke',(rec:Obj):Obj => {
+        let scope = new Obj("block-scope",rec.slots.get('scope') as Obj)
         scope.slots.set("_name",StrObj('block-scope'))
         l.indent()
-        let last = null
+        let last = NilObj()
         for (let ast of value) {
             last = evalAst(ast,scope)
             if (!last) last = NilObj()
@@ -223,23 +196,30 @@ function BlockObj(value:Ast[], slots:Record<string,Obj>):Obj {
     return obj
 }
 
+function resolve_js_method(meth: unknown):JSFun {
+    if(meth instanceof Obj) {
+        if (meth.name === 'BlockLiteral') {
+            console.log("Method is a block literal")
+            return meth._get_js_slot('invoke') as JSFun
+        } else if (meth.name == "JSFun") {
+            return meth._get_js_slot('js') as JSFun
+        }
+    }
+    return meth as JSFun
+}
+
 function eval_group(ast:GroupAst, scope:Obj):Obj {
     let receiver = evalAst(ast.value[0], scope)
     let message = SymRef(ast.value[1].value)
-    let method = receiver.lookup_method(message)
-    if (method instanceof Obj) {
-        if (method.name === 'JSFun') {
-            method = method.slots.get('js')
-        }
-    }
+    let method = resolve_js_method(receiver.lookup_method(message))
     if (ast.value.length <= 2) {
         if (method instanceof Obj) {
             return method
         }
-        return method(receiver, method, null)
+        return method(receiver)
     }
     let argument = evalAst(ast.value[2], scope)
-    return method(receiver, message, argument)
+    return method(receiver, argument)
 }
 
 function eval_statement(ast: StmtAst, scope: Obj) {
@@ -247,29 +227,14 @@ function eval_statement(ast: StmtAst, scope: Obj) {
     if (receiver.name == "SymbolReference") {
         console.log("receiver is a symbol reference, not a symbol.")
     }
-    if (ast.value.length <= 1) {
-        return receiver
-    }
+    if (ast.value.length <= 1) return receiver
     let message = SymRef(ast.value[1].value);
-    let method = receiver.lookup_method(message)
-    if(method instanceof Obj) {
-        if (method.name === 'BlockLiteral') {
-            console.log("Method is a block literal")
-            method = method.slots.get('invoke')
-        } else if (method.name == "JSFun") {
-            method = method.slots.get('js')
-        }
-    }
-    if (ast.value.length <= 2) {
-        return method(receiver,method,null)
-    }
+    let method:JSFun = resolve_js_method(receiver.lookup_method(message))
+    if (ast.value.length <= 2) return method(receiver)
     let argument = evalAst(ast.value[2], scope)
-    if (ast.value.length <= 3) {
-        return method(receiver, message, argument)
-    }
+    if (ast.value.length <= 3) return method(receiver,argument)
     let argument2 = evalAst(ast.value[3], scope)
-    return method(receiver, message, argument, argument2)
-
+    return method(receiver, argument, argument2)
 }
 
 function evalAst(ast: Ast, scope:Obj):Obj {
@@ -278,7 +243,7 @@ function evalAst(ast: Ast, scope:Obj):Obj {
     if (ast.type == 'id')  return scope.lookup_symbol((ast as IdAst).value)
     if (ast.type == 'group') return eval_group(ast as GroupAst, scope)
     if (ast.type == 'stmt')  return eval_statement(ast as StmtAst, scope)
-    if (ast.type == 'block') return BlockObj((ast as BlockAst).value, {'scope': scope})
+    if (ast.type == 'block') return BlockObj((ast as BlockAst).value, {scope})
     throw new Error(`unknown ast type ${ast.type}`)
 }
 
