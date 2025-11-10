@@ -45,10 +45,13 @@ class Obj {
     proto: Obj | null
     slots: Map<string,Obj>
     name: string;
-    constructor(name:string,proto:Obj|null){
+    constructor(name:string,proto:Obj|null, slots?:Record<string,unknown>){
         this.name = name;
         this.proto = proto
         this.slots = new Map()
+        if(slots) {
+            this._set_slots(slots)
+        }
     }
 
     lookup_method(message: Obj):unknown {
@@ -57,7 +60,7 @@ class Obj {
             // l.p("message is a function")
             return message
         }
-        let name = message.slots.get('value')
+        let name = message.slots.get('value') as string
         // p(`looking up message ${name} in ${this.name}`)
         if(this.slots.has(name)) {
             return this.slots.get(name)
@@ -98,9 +101,23 @@ class Obj {
             return this.proto.lookup_symbol(value)
         }
     }
+
+    _set_slots(slots: Record<string, unknown>) {
+        for(let key in slots) {
+            this.slots.set(key,slots[key])
+        }
+    }
+
+    _get_js_slot(name:string):unknown {
+        return this.slots.get(name)
+    }
 }
 
 let ObjectProto = new Obj("Object",null);
+let NilProto = new Obj("Nil",ObjectProto);
+let StringProto = new Obj("String",ObjectProto);
+
+
 ObjectProto.slots.set('print', function print(receiver:Obj, message:Obj, argument:Obj) {
     console.log("Object: OUTPUT ", receiver.name, 'is',receiver)
     return NilObj()
@@ -121,94 +138,78 @@ ObjectProto.slots.set('getSlot', function(receiver:Obj, message:Obj, argument:Ob
     let name = argument.slots.get('value')
     return receiver.slots.get(name)
 })
-let NumberProto = new Obj("Number",ObjectProto);
-NumberProto.slots.set('print', function(receiver:Obj, message:Obj, argument:Obj) {
-    console.log(`Number: OUTPUT ${receiver.slots.get('value')}`)
-    return StrObj(receiver.slots.get('value')+"")
-})
-NumberProto.slots.set('add',function(receiver:Obj,message:Obj,argument:Obj) {
-    let a = receiver.slots.get('value') as number
-    let b = argument.slots.get('value') as number
-    return NumObj(a+b)
-})
-NumberProto.slots.set('+',function(receiver:Obj,message:Obj,argument:Obj) {
-    let a = receiver.slots.get('value') as number
-    let b = argument.slots.get('value') as number
-    return NumObj(a+b)
-})
-NumberProto.slots.set('-',function(receiver:Obj,message:Obj,argument:Obj) {
-    let a = receiver.slots.get('value') as number
-    let b = argument.slots.get('value') as number
-    return NumObj(a-b)
-})
-NumberProto.slots.set('<',function(receiver:Obj,message:Obj,argument:Obj) {
-    let a = receiver.slots.get('value') as number
-    let b = argument.slots.get('value') as number
-    return BoolObj(a<b)
-})
-NumberProto.slots.set('>',function(receiver:Obj,message:Obj,argument:Obj) {
-    let a = receiver.slots.get('value') as number
-    let b = argument.slots.get('value') as number
-    return BoolObj(a>b)
-})
-let StringProto = new Obj("String",ObjectProto);
-StringProto.slots.set('print', function(rec:Obj,msg:Obj) {
-    console.log(`String: OUTPUT: ${rec.slots.get('value')}`)
-})
-StringProto.slots.set('append', function(rec:Obj,msg:Obj, argument:Obj) {
-    let a = rec.slots.get('value') as string
-    let b = argument.slots.get('value') as string
-    return StrObj( a + b)
-})
-let BooleanProto = new Obj("Boolean",ObjectProto);
-BooleanProto.slots.set('cond', function(rec:Obj,msg:Obj, arg1:Obj, arg2:Obj) {
-    let val = rec.slots.get('value')
-    if (val === true) {
-        let invoke = arg1.slots.get('invoke')
-        return invoke(arg1, invoke,null)
-    }
-    if (val === false) {
-        let invoke = arg2.slots.get('invoke')
-        return invoke(arg2, invoke,null)
-    }
-})
-let NilProto = new Obj("Nil",ObjectProto);
 
-function NumObj(value:number):Obj {
-    let obj = new Obj("NumberLiteral",NumberProto)
-    obj.slots.set('value',value)
-    return obj
+
+
+type JSFun = (receiver:Obj, message:Obj, argument:Obj) => Obj
+function mkJsFunc(name:string, fun:JSFun):Obj {
+    let jsfun = new Obj("JSFun",ObjectProto);
+    let str =  new Obj("StringLiteral", StringProto, {'value': name})
+    jsfun.slots.set('name',str)
+    jsfun.slots.set('js',fun)
+    return jsfun
 }
 
-function StrObj(value:string):Obj {
-    let obj = new Obj("StringLiteral",StringProto)
-    obj.slots.set('value',value)
-    return obj
+type BinNumOp = (a:number, b:number) => number
+type BinBoolOp = (a:number, b:number) => boolean
+function js_binop_num(a:Obj, b:Obj, op:BinNumOp):Obj {
+    let aa = a._get_js_slot('value') as number
+    let bb = b._get_js_slot('value') as number
+    return NumObj(op(aa,bb))
 }
-
-function SymRef(value:string):Obj {
-    let obj = new Obj("SymbolReference",ObjectProto)
-    obj.slots.set('value',value)
-    return obj
+function js_binop_bool(a:Obj, b:Obj, op:BinBoolOp):Obj {
+    let aa = a._get_js_slot('value') as number
+    let bb = b._get_js_slot('value') as number
+    return BoolObj(op(aa,bb))
 }
+let NumberProto = new Obj("Number",ObjectProto, {
+    'print': mkJsFunc('print', (rec) => {
+        console.log(`Number: OUTPUT ${rec.slots.get('value')}`)
+        return StrObj(rec.slots.get('value') + "")
+    }),
+    'add': mkJsFunc('add', (rec, _msg, arg0) => js_binop_num(rec, arg0, (a, b) => a + b)),
+    '+': mkJsFunc('+',(rec,msg,arg0) => js_binop_num(rec,arg0,(a,b)=>a+b)),
+    '-': mkJsFunc('-',(rec,msg,arg0) => js_binop_num(rec,arg0,(a,b)=>a-b)),
+    '<': mkJsFunc('<',(rec,msg,arg0) => js_binop_bool(rec,arg0,(a,b)=>a<b)),
+    '>': mkJsFunc('>',(rec,msg,arg0) => js_binop_bool(rec,arg0,(a,b)=>a>b)),
+})
+StringProto._set_slots({
+    'print': mkJsFunc('print', (rec, msg): Obj => {
+        console.log(`String: OUTPUT: ${rec.slots.get('value')}`)
+        return StrObj(rec.slots.get('value') + "")
+    }),
+    'append':mkJsFunc('append', (rec,msg, arg) => {
+        let a = rec._get_js_slot('value') as string
+        let b = arg._get_js_slot('value') as string
+        return StrObj( a + b)
+    }),
+})
 
-function BoolObj(value:boolean):Obj {
-    let obj = new Obj("BooleanLiteral",BooleanProto)
-    obj.slots.set('value',value)
-    return obj
-}
+let BooleanProto = new Obj("Boolean",ObjectProto, {
+    'cond':mkJsFunc('cond',(rec:Obj,msg:Obj,arg1:Obj,arg2:Obj) => {
+        let val = rec._get_js_slot('value') as boolean
+        if (val) {
+            let invoke = arg1._get_js_slot('invoke') as Function
+            return invoke(arg1, invoke,null)
+        } else {
+            let invoke = arg2._get_js_slot('invoke') as Function
+            return invoke(arg2, invoke,null)
+        }
+    })
+});
 
-function NilObj():Obj {
-    let obj = new Obj("NilLiteral",NilProto)
-    obj.slots.set('value',NilProto)
-    return obj
-}
 
-function BlockObj(value:Ast[]):Obj {
-    let obj = new Obj("BlockLiteral",ObjectProto)
+const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
+const StrObj = (value:string) => new Obj("StringLiteral", StringProto, {'value': value})
+const SymRef = (value:string) => new Obj("SymbolReference", ObjectProto, {'value': value})
+const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value': value})
+const NilObj= () => new Obj("NilLiteral", NilProto, {'value': NilProto})
+
+function BlockObj(value:Ast[], slots:Record<string,Obj>):Obj {
+    let obj = new Obj("BlockLiteral",ObjectProto,slots)
     obj.slots.set('value',value)
     obj.slots.set('invoke',function invoke(rec:Obj) {
-        let scope = new Obj("blockscope",rec.slots.get('scope'))
+        let scope = new Obj("block-scope",rec.slots.get('scope'))
         scope.slots.set("_name",StrObj('block-scope'))
         l.indent()
         let last = null
@@ -226,6 +227,11 @@ function eval_group(ast:GroupAst, scope:Obj):Obj {
     let receiver = evalAst(ast.value[0], scope)
     let message = SymRef(ast.value[1].value)
     let method = receiver.lookup_method(message)
+    if (method instanceof Obj) {
+        if (method.name === 'JSFun') {
+            method = method.slots.get('js')
+        }
+    }
     if (ast.value.length <= 2) {
         if (method instanceof Obj) {
             return method
@@ -250,6 +256,8 @@ function eval_statement(ast: StmtAst, scope: Obj) {
         if (method.name === 'BlockLiteral') {
             console.log("Method is a block literal")
             method = method.slots.get('invoke')
+        } else if (method.name == "JSFun") {
+            method = method.slots.get('js')
         }
     }
     if (ast.value.length <= 2) {
@@ -270,11 +278,7 @@ function evalAst(ast: Ast, scope:Obj):Obj {
     if (ast.type == 'id')  return scope.lookup_symbol((ast as IdAst).value)
     if (ast.type == 'group') return eval_group(ast as GroupAst, scope)
     if (ast.type == 'stmt')  return eval_statement(ast as StmtAst, scope)
-    if (ast.type == 'block') {
-        let blk = BlockObj((ast as BlockAst).value)
-        blk.slots.set('scope',scope)
-        return blk
-    }
+    if (ast.type == 'block') return BlockObj((ast as BlockAst).value, {'scope': scope})
     throw new Error(`unknown ast type ${ast.type}`)
 }
 
