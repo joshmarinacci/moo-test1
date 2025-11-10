@@ -1,10 +1,11 @@
 export class Ast {
+    type!: string
     toString():string {
         return "hi there"
     }
 }
 
-class StmtAst extends Ast {
+export class StmtAst extends Ast {
     value: Ast[]
     type: 'stmt'
     constructor(value:Ast[]) {
@@ -16,7 +17,7 @@ class StmtAst extends Ast {
         return "" + this.value.map(s => s.toString()).join(" ") + "."
     }
 }
-class GroupAst extends Ast {
+export class GroupAst extends Ast {
     value: Ast[]
     type: 'group'
     constructor(value:Ast[]) {
@@ -25,10 +26,10 @@ class GroupAst extends Ast {
         this.value = value
     }
     toString() {
-        return "" + this.value.map(s => s.toString()).join(" ") + "."
+        return "(" + this.value.map(s => s.toString()).join(" ") + ")"
     }
 }
-class BlockAst extends Ast {
+export class BlockAst extends Ast {
     value: Ast[]
     type: 'block'
     constructor(value:Ast[]) {
@@ -37,10 +38,10 @@ class BlockAst extends Ast {
         this.value = value
     }
     toString() {
-        return "" + this.value.map(s => s.toString()).join(" ") + "."
+        return "[ " + this.value.map(s => s.toString()).join(" ") + " ]"
     }
 }
-class NumAst extends Ast {
+export class NumAst extends Ast {
     value: number
     type: 'num'
     constructor(value:number) {
@@ -52,7 +53,7 @@ class NumAst extends Ast {
         return "" + this.value
     }
 }
-class StrAst extends Ast {
+export class StrAst extends Ast {
     value: string
     type: 'str'
     constructor(value:string) {
@@ -61,10 +62,10 @@ class StrAst extends Ast {
         this.value = value
     }
     toString() {
-        return "Number" + this.value
+        return `"${this.value}"`
     }
 }
-class IdAst extends Ast {
+export class IdAst extends Ast {
     value: string
     type: 'id'
     constructor(value:string) {
@@ -73,7 +74,7 @@ class IdAst extends Ast {
         this.value = value
     }
     toString() {
-        return "" + this.value
+        return "@" + this.value
     }
 }
 
