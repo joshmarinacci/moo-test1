@@ -244,8 +244,13 @@ function invoke_method(receiver:Obj, message:Obj, args:Obj[]):Obj {
     if (meth instanceof Obj && meth.name === 'BlockLiteral') {
         receiver = meth
     }
-    // console.log(`invoking  '${message._get_js_slot('value')}' on ${receiver.name} `)
-    return method(receiver, ...args)
+    // console.log(`invoking  '${message._get_js_slot('value')}' on ${receiver.name} with ${args[0]}`)
+    if (method instanceof Function) {
+        return method(receiver, ...args)
+    } else {
+        console.log("not a function")
+        return method
+    }
 }
 function eval_statement(ast: StmtAst, scope: Obj) {
     let receiver = evalAst(ast.value[0], scope)
@@ -392,3 +397,48 @@ test('eval nested blocks',() => {
         ,NumObj(10))
 
 })
+
+test('eval vector class',() => {
+    let scope = new Obj("Global",ObjectProto)
+    scope.slots.set('Object',ObjectProto);
+    scope.slots.set('Number',NumberProto);
+    scope.slots.set('Boolean',BooleanProto);
+    scope.slots.set('true',BoolObj(true));
+    scope.slots.set('false',BoolObj(false));
+    scope.slots.set('String',StringProto);
+    scope.slots.set('Nil',NilProto);
+    scope.slots.set('nil',NilObj());
+    parseAndEvalWithScope('self setSlot "Vector" (Object clone).',scope);
+    parseAndEvalWithScope(`[
+    Vector setSlot "x" 0.
+    Vector setSlot "y" 0.
+    Vector setSlot "z" 0.
+    Vector setSlot "add" [
+        "pretending to add " print.
+    ].
+    Vector setSlot "g" [
+       "inside vector " print.
+       self x.
+    ].
+    self setSlot "v" (Vector clone).
+    v g.
+    ] invoke.
+    `,scope)
+
+    comp(parseAndEvalWithScope(`[
+    self setSlot "a" ( Vector clone ).
+    "here now" print.
+    a setSlot "x" 10.
+    (a x ) print.
+    self setSlot "b" ( Vector clone ).
+    b setSlot "x" 20.
+    (b x) print.
+    
+    self setSlot "c" (a add b). 
+    55.
+    
+    ] invoke.`,scope),NumObj(55))
+})
+
+// support := syntax.
+// support arguments to blocks
