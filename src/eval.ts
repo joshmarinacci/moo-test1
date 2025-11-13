@@ -8,10 +8,12 @@ class Obj {
     proto: Obj | null
     slots: Map<string,Obj>
     name: string;
+    _is_return: boolean;
     constructor(name:string,proto:Obj|null, slots?:Record<string,unknown>){
         this.name = name;
         this.proto = proto
         this.slots = new Map()
+        this._is_return = false;
         if(slots) {
             this._set_slots(slots)
         }
@@ -47,6 +49,14 @@ class Obj {
     }
     _set_js_slot(name:string, value:unknown) {
         this.slots.set(name,value)
+    }
+
+    _proto_chain() {
+        return this.name+', '+ (this.proto ? this.proto._proto_chain() : '')
+    }
+
+    is_return() {
+        return this._is_return
     }
 }
 
@@ -156,19 +166,39 @@ const SymRef = (value:string) => new Obj("SymbolReference", ObjectProto, {'value
 const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value': value})
 const NilObj= () => new Obj("NilLiteral", NilProto, {'value': NilProto})
 
+let BLOCK_COUNT = 0;
 function BlockObj(args:Ast[],body:Ast[], slots:Record<string,Obj>):Obj {
     let obj = new Obj("BlockLiteral",ObjectProto, slots)
+    // console.log("created block literal in scope",obj._proto_chain())
     // obj.slots.set('value',value)
     obj.slots.set('invoke',(rec:Obj):Obj => {
-        let scope = new Obj("block-scope",rec.slots.get('scope') as Obj)
-        // console.log("invoking block with scope",rec.slots.get('scope'))
-        // console.log("receiver is",rec)
+        let scope = new Obj("block-scope-"+(++BLOCK_COUNT),rec.slots.get('scope') as Obj)
+        // console.log(`invoking block ${scope.name} with scope`,scope._proto_chain())
+        // console.log("receiver is block literal with proto chain",rec._proto_chain())
+        // console.log("=== is method? ".toUpperCase(), rec.slots.get('method')?.toString())
+        // if (rec.slots.get('scope')?.name === 'Global') {
+        //     console.log("==== PARENT is global".toUpperCase())
+        // }
         scope.slots.set("_name",StrObj('block-scope'))
         l.indent()
         let last = NilObj()
         for (let ast of body) {
+            // console.log("invoking statement",ast.toString())
             last = evalAst(ast,scope)
             if (!last) last = NilObj()
+            if (last.is_return()) {
+                // console.log("current scope is", scope._proto_chain())
+                // console.log("ret scope is", last._proto_chain())
+                // console.log("is method = ", last.slots.get('method'))
+                // console.log(`returning ${last.slots.get('value')} target is`, last.slots.get('target')?._proto_chain())
+                if (last.slots.get('target') === scope) {
+                    // console.log("doing early return here ", last.slots.get('value'))
+                    return last.slots.get('value')
+                }
+                // console.log("normal quick return of",last)
+                l.outdent()
+                return last
+            }
         }
         l.outdent()
         return last
@@ -215,23 +245,34 @@ function invoke_method(receiver:Obj, message:Obj, args:Obj[], scope:Obj):Obj {
     if (meth instanceof Obj && meth.name === 'BlockLiteral') {
         receiver = meth
     }
-    // console.log(`invoking  '${message._get_js_slot('value')}' on ${receiver.name} with ${args[0]}`)
+    // console.log(`invoking method  '${message._get_js_slot('value')}' on ${receiver.name} with ${args[0]}`)
     if (method instanceof Function) {
         return method(receiver, ...args)
     } else {
         return method
     }
 }
-function eval_statement(ast: StmtAst, scope: Obj) {
-    let receiver = evalAst(ast.value[0], scope)
+function eval_statement(asts: Array<Ast>, scope: Obj):Obj {
+    let receiver = evalAst(asts[0], scope)
     if (receiver.name == "SymbolReference") {
         // console.log("receiver is a symbol reference, not a symbol.")
     }
-    if (ast.value.length <= 1) return receiver
-    let message = SymRef(ast.value[1].value);
+    if (asts.length <= 1) return receiver
+
+    if (receiver._get_js_slot('value') === "return") {
+        let ret = eval_statement(asts.slice(1), scope)
+        let ret2 = new Obj('non-local-return',scope.proto)
+        ret2._is_return = true;
+        ret2.slots.set("_name",StrObj('non-local-return'))
+        ret2.slots.set("value",ret)
+        ret2.slots.set("target",scope.proto)
+        return ret2
+    }
+
+    let message = SymRef(asts[1].value);
     let args:Obj[] = []
-    for (let i=2; i<ast.value.length; i++) {
-        args.push(evalAst(ast.value[i],scope))
+    for (let i=2; i<asts.length; i++) {
+        args.push(evalAst(asts[i],scope))
     }
     return invoke_method(receiver,message,args,scope)
 }
@@ -241,7 +282,7 @@ function evalAst(ast: Ast, scope:Obj):Obj {
     if (ast.type == 'str') return StrObj((ast as StrAst).value);
     if (ast.type == 'id')  return scope.lookup_symbol((ast as IdAst).value)
     if (ast.type == 'group') return eval_group(ast as GroupAst, scope)
-    if (ast.type == 'stmt')  return eval_statement(ast as StmtAst, scope)
+    if (ast.type == 'stmt')  return eval_statement((ast as StmtAst).value, scope)
     if (ast.type == 'block') return BlockObj((ast as BlockAst).args, (ast as BlockAst).body, {scope})
     throw new Error(`unknown ast type ${ast.type}`)
 }
@@ -300,7 +341,9 @@ function init_std_scope() {
     return scope;
 }
 
-const no_test = (name,code) => {};
+const no_test = (name,code) => {
+    // test(name,code)
+};
 
 no_test("parse expressions", () => {
     assert.deepStrictEqual(parseAst(" 4 ."), Stmt(Num(4)))
@@ -453,3 +496,29 @@ no_test('eval assignment operator', () => {
 //         foo print.
 //     ] invoke.`,scope),NilObj())
 // })
+
+test('non local return', () => {
+    let scope = init_std_scope()
+    parseAndEvalWithScope(`[ 
+        T := (Object clone).
+        T setSlot "nl" [ 
+          "inside method" print.
+          ( 4 > 5 ) cond [
+            "method 1" print.
+            return 1.
+          ] [ 
+            "method 2" print.
+            return 2.
+          ].
+          "after return" print.
+        ].
+        T nl. 
+    ] invoke.`,scope)//,NumObj(2))
+})
+
+test('non local return 2', () => {
+    let scope = init_std_scope()
+    parseAndEvalWithScope(`[
+        return 2.
+    ] invoke.`,scope)//,NumObj(2))
+})
