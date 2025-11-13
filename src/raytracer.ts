@@ -306,4 +306,4 @@ function isLightVisible(pt:Vec, scene:Scene, light:Vec) {
 
 render(scene);
 
-encodePNGToStream(data,fs.createWriteStream('out.png')).then(() => console.log("done writing"))
+encodePNGToStream(data,fs.createWriteStream('out.png')).then(() => console.log("done writing to 'out.png'"))
