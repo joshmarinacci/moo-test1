@@ -113,6 +113,10 @@ ObjectProto.slots.set('getSlot', mkJsFunc('getSlot', (rec, arg) => {
         }
     }
 }))
+ObjectProto.slots.set("setClassname",mkJsFunc('setClassname',(rec:Obj, arg:Obj) => {
+    rec.name = arg._get_js_slot('value')
+    return rec
+}))
 
 
 type BinNumOp = (a:number, b:number) => number
@@ -137,6 +141,7 @@ let NumberProto = new Obj("Number",ObjectProto, {
     '-': mkJsFunc('-',(rec,arg0) => js_binop_num(rec,arg0,(a,b)=>a-b)),
     '<': mkJsFunc('<',(rec,arg0) => js_binop_bool(rec,arg0,(a,b)=>a<b)),
     '>': mkJsFunc('>',(rec,arg0) => js_binop_bool(rec,arg0,(a,b)=>a>b)),
+    '==': mkJsFunc('==',(rec,arg0) => js_binop_bool(rec,arg0,(a,b)=>a==b)),
 })
 StringProto._set_slots({
     'print': mkJsFunc('print', (rec): Obj => {
@@ -159,6 +164,13 @@ let BooleanProto = new Obj("Boolean",ObjectProto, {
         } else {
             let invoke = arg2._get_js_slot('invoke') as Function
             return invoke(arg2, null,null)
+        }
+    }),
+    'ifTrue':mkJsFunc('ifTrue',(rec:Obj, arg1:Obj,arg2:Obj) => {
+        let val = rec._get_js_slot('value') as boolean
+        if (val) {
+            let invoke = arg1._get_js_slot('invoke') as Function
+            return invoke(arg1, null,null)
         }
     })
 });
@@ -452,6 +464,39 @@ test('eval nested blocks',() => {
 
 })
 
+test ('fib recursion',() => {
+    let scope = init_std_scope()
+    comp(pval(`[ 
+        Math := Object clone.
+        Math setSlot "fib" [n| 
+            (n == 0) ifTrue [ return 0. ].
+            (n == 1) ifTrue [ return 1. ].
+            (Math fib ( n - 2 ) ) + (Math fib (n - 1 ) ).
+        ].
+        Math fib 6.
+     ] invoke . `,scope)
+        ,NumObj(8))
+})
+test('objects with slots',() => {
+    let scope = init_std_scope()
+    pval(`[
+     self setSlot "A" (Object clone).
+     A setClassname "Awesome".
+     A setSlot "x" 0.
+     A setSlot "gx" [
+        "inside gx" print.
+        self x.
+     ].
+     A setSlot "make" [
+        "making a new A" print.
+        a := (A clone).
+        a print.
+        (a gx) print. 
+        a.
+     ].
+     A make.
+    ] invoke .`, scope)
+})
 test('eval vector class',() => {
     let scope = init_std_scope()
     pval('Vector := (Object clone).',scope);

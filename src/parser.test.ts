@@ -90,6 +90,7 @@ test("parse operators",() => {
     assert.deepStrictEqual(produces("+",Operator),Id("+"))
     assert.deepStrictEqual(produces("<",Operator),Id("<"))
     assert.deepStrictEqual(produces(">",Operator),Id(">"))
+    assert.deepStrictEqual(produces("==",Operator),Id("=="))
     assert.deepStrictEqual(produces(":=",Operator),Id(":="))
 })
 
