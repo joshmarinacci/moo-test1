@@ -83,7 +83,13 @@ ObjectProto.slots.set('print', mkJsFunc('print', (rec) => {
     return NilObj()
 }))
 ObjectProto.slots.set('clone', mkJsFunc('clone',(rec) => {
-    return new Obj("clone of " + rec.name, rec)
+    let obj = new Obj("clone of " + rec.name, rec);
+    // l.p("cloning the obj ", rec.name)
+    for (let [key,value] of rec.slots.entries()) {
+        // l.p("copying entry",key,value.name)
+        obj.slots.set(key, value)
+    }
+    return obj
 }))
 ObjectProto.slots.set('setSlot', mkJsFunc('setSlot', (rec:Obj, arg:Obj, arg2:Obj) => {
     let name = arg._get_js_slot('value') as string
@@ -95,7 +101,7 @@ ObjectProto.slots.set('setSlot', mkJsFunc('setSlot', (rec:Obj, arg:Obj, arg2:Obj
     }
     if (arg2.name === "BlockLiteral") {
         arg2.slots.set('scope',rec)
-        // console.log(`set scope of '${arg2.name}' to be '${rec.name}'`)
+        l.p(`set scope of '${arg2.name}' to be '${rec.name}'`)
     }
     return arg2
 }))
@@ -175,6 +181,29 @@ let BooleanProto = new Obj("Boolean",ObjectProto, {
     })
 });
 
+let ListProto = new Obj("List",ObjectProto, {
+    'push':mkJsFunc('push',(rec:Obj, arg:Obj)=>{
+        let arr:Array<unknown> = (rec._get_js_slot('value') as []);
+        arr.push(arg);
+    }),
+    'at':mkJsFunc('at',(rec:Obj,arg:Obj) => {
+        let arr:Array<unknown> = (rec._get_js_slot('value') as []);
+        let index = arg._get_js_slot('value')
+        return arr[index]
+    }),
+    'setAt':mkJsFunc('setAt',(rec:Obj,arg:Obj, arg2:Obj) => {
+        let arr:Array<unknown> = (rec._get_js_slot('value') as []);
+        let index = arg._get_js_slot('value') as number;
+        arr[index] = arg2
+        return rec
+    }),
+    'len':mkJsFunc('len',(rec)=>{
+        let arr:Array<unknown> = (rec._get_js_slot('value') as []);
+        return NumObj(arr.length)
+    })
+})
+ListProto._set_js_slot('value',[])
+
 
 const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
 const StrObj = (value:string) => new Obj("StringLiteral", StringProto, {'value': value})
@@ -186,7 +215,9 @@ let BLOCK_COUNT = 0;
 function BlockObj(args:Ast[],body:Ast[], slots:Record<string,Obj>):Obj {
     let obj = new Obj("BlockLiteral",ObjectProto, slots)
     obj.slots.set('args',args)
+    // l.p("block literal scope is",slots.scope.name)
     obj.slots.set('invoke',(rec:Obj,...params):Obj => {
+        // l.p("block invok. rec is", rec.name)
         let scope = new Obj("block-scope-"+(++BLOCK_COUNT),rec.slots.get('scope') as Obj)
         scope.slots.set("_name",StrObj('block-scope'))
         for(let i=0; i<args.length; i++) {
@@ -226,8 +257,11 @@ function resolve_js_method(meth: unknown):JSFun {
 }
 
 function eval_group(ast:GroupAst, scope:Obj):Obj {
+    // console.log("eval group",ast)
     let receiver = evalAst(ast.value[0], scope)
     let message = SymRef(ast.value[1].value)
+    // l.p("receiver",receiver)
+    // l.p("message",message)
     let method = resolve_js_method(receiver.lookup_method(message))
     if (ast.value.length <= 2) {
         if (method instanceof Obj) {
@@ -261,6 +295,8 @@ function invoke_method(receiver:Obj, message:Obj, args:Obj[], scope:Obj):Obj {
     }
 }
 function eval_statement(asts: Array<Ast>, scope: Obj):Obj {
+    // l.p("eval statement")
+    l.indent()
     let receiver = evalAst(asts[0], scope)
     if (receiver.name == "SymbolReference") {
         // console.log("receiver is a symbol reference, not a symbol.")
@@ -282,17 +318,30 @@ function eval_statement(asts: Array<Ast>, scope: Obj):Obj {
     for (let i=2; i<asts.length; i++) {
         args.push(evalAst(asts[i],scope))
     }
+    // l.p("invoking method ",receiver.name,message._get_js_slot('value'))
+    l.outdent()
     return invoke_method(receiver, message, args, scope)
 }
 
 function evalAst(ast: Ast, scope:Obj):Obj {
+    // l.p("ast ",ast.type, " ", scope.name)
     if (ast.type == 'num') return NumObj((ast as NumAst).value);
     if (ast.type == 'str') return StrObj((ast as StrAst).value);
     if (ast.type == 'id')  return scope.lookup_symbol((ast as IdAst).value)
-    if (ast.type == 'group') return eval_group(ast as GroupAst, scope)
-    if (ast.type == 'stmt')  return eval_statement((ast as StmtAst).value, scope)
+    if (ast.type == 'group') {
+        l.indent()
+        let ret = eval_group(ast as GroupAst, scope)
+        l.outdent()
+        return ret
+    }
+    if (ast.type == 'stmt')  {
+        l.indent()
+        let ret = eval_statement((ast as StmtAst).value, scope)
+        l.outdent()
+        return ret
+    }
     if (ast.type == 'block') return BlockObj((ast as BlockAst).args, (ast as BlockAst).body, {scope})
-    console.log("ast is",ast)
+    console.warn("ast is",ast)
     throw new Error(`unknown ast type ${ast.type}`)
 }
 
@@ -340,14 +389,18 @@ function pval(code: string, scope: Obj):Obj {
 }
 ObjectProto.slots.set("name",StrObj("Global"))
 
+let ObjectBase = new Obj("ObjectBase",ObjectProto)
+
 function init_std_scope() {
     let scope = new Obj("Global",ObjectProto)
     scope.slots.set('Object',ObjectProto);
+    scope.slots.set('ObjectBase',ObjectBase)
     scope.slots.set('Number',NumberProto);
     scope.slots.set('Boolean',BooleanProto);
     scope.slots.set('true',BoolObj(true));
     scope.slots.set('false',BoolObj(false));
     scope.slots.set('String',StringProto);
+    scope.slots.set('List',ListProto);
     scope.slots.set('Nil',NilProto);
     scope.slots.set('nil',NilObj());
     return scope;
@@ -480,26 +533,42 @@ test ('fib recursion',() => {
 test('objects with slots',() => {
     let scope = init_std_scope()
     pval(`[
-     self setSlot "A" (Object clone).
+     self setSlot "A" (ObjectBase clone).
      A setClassname "Awesome".
      A setSlot "x" 0.
      A setSlot "gx" [
-        "inside gx" print.
-        self x.
+        x.
      ].
-     A setSlot "make" [
-        "making a new A" print.
-        a := (A clone).
-        a print.
-        (a gx) print. 
-        a.
+     A setSlot "sx" [
+        "inside sx" print.
+        self setSlot "sx" 5.
      ].
-     A make.
+     a := (A clone).
+     "cloned awesome" print.
+     a sx 5.
+     (a gx ) print.
     ] invoke .`, scope)
+})
+test('list class', () => {
+    let scope = init_std_scope()
+    pval('list := (List clone).',scope);
+    comp(pval(`[
+    list push 7.
+    list push 8.
+    list push 9.
+    list len.
+    ] invoke.`,scope),NumObj(3))
+    comp(pval(`[
+        list at 0.
+    ] invoke.`,scope),NumObj(7))
+    comp(pval(`[
+        list setAt 0 88.
+        list at 0.
+    ] invoke.`,scope),NumObj(88))
 })
 test('eval vector class',() => {
     let scope = init_std_scope()
-    pval('Vector := (Object clone).',scope);
+    pval('Vector := (ObjectBase clone).',scope);
     pval(`[
     Vector setSlot "x" 0.
     Vector setSlot "y" 0.
