@@ -139,32 +139,35 @@ const DebugProto = new Obj("DebugProto",ObjectProto,{
         d.p("debug printing")
     }
 })
-const NumberProto = new Obj("NumberProto",ObjectProto,{
-    '+':(rec:Obj, args:Array<Obj>) => {
-        let a= rec.get_js_slot('value') as number
+const js_num_op = (cb:(a:number,b:number)=>number) => {
+    return function (rec:Obj, args:Array<Obj>){
+        let a = rec.get_js_slot('value') as number
         let b = args[0].get_js_slot('value') as number
-        return NumObj(a + b)
-    },
-    '-':(rec:Obj, args:Array<Obj>) => {
-        let a= rec.get_js_slot('value') as number
-        let b = args[0].get_js_slot('value') as number
-        return NumObj(a - b)
-    },
-    '*':(rec:Obj, args:Array<Obj>) => {
-        let a= rec.get_js_slot('value') as number
-        let b = args[0].get_js_slot('value') as number
-        return NumObj(a * b)
-    },
-    '/':(rec:Obj, args:Array<Obj>) => {
-        let a= rec.get_js_slot('value') as number
-        let b = args[0].get_js_slot('value') as number
-        return NumObj(a / b)
+        return NumObj(cb(a, b))
     }
+}
+const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
+    return function (rec:Obj, args:Array<Obj>){
+        let a = rec.get_js_slot('value') as number
+        let b = args[0].get_js_slot('value') as number
+        return BoolObj(cb(a, b))
+    }
+}
+const NumberProto = new Obj("NumberProto",ObjectProto,{
+    '+':js_num_op((a,b)=>a+b),
+    '-':js_num_op((a,b)=>a-b),
+    '*':js_num_op((a,b)=>a*b),
+    '/':js_num_op((a,b)=>a/b),
+    '<':js_bool_op((a,b)=>a<b),
+    '>':js_bool_op((a,b)=>a>b),
+    '==':js_bool_op((a,b)=>a==b),
 });
 const StringProto = new Obj("StringProto",ObjectProto,{});
 const BooleanProto = new Obj("BooleanProto",ObjectProto,{});
+const NilProto = new Obj("NilProto",ObjectProto,{});
 const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
 const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value':value})
+const NilObj = () => new Obj("NilLiteral", NilProto, {})
 const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'value': value})
 const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'value':value})
 const BlockProto = new Obj("BlockProto",ObjectProto,{
@@ -320,6 +323,8 @@ function make_default_scope():Obj {
     scope.make_slot("Boolean",BooleanProto)
     scope.make_slot("true",BoolObj(true))
     scope.make_slot("false",BoolObj(false))
+    scope.make_slot("Nil",NilProto)
+    scope.make_slot('nil',NilObj())
     return scope
 }
 const no_test = (name:string, cb:unknown) => {
@@ -364,18 +369,29 @@ test('scope tests',() => {
         ] invoke.
     ] invoke .`,scope,NumObj(5))
 })
-test('boolean tests',() => {
-    let scope:Obj = make_default_scope();
-    cval('true .',scope,BoolObj(true));
-    cval('false .',scope,BoolObj(false));
-})
-test('number tests',() => {
+test('numbers',() => {
     let scope:Obj = make_default_scope();
     cval('4 .',scope,NumObj(4));
     cval('4 + 5.',scope,NumObj(9));
     cval('4 - 5.',scope,NumObj(-1));
     cval('4 * 2.',scope,NumObj(8));
     cval('4 / 2.',scope,NumObj(2));
+    cval('(4 * 5) * 6.',scope,NumObj(120));
+    cval('(4 + 5) * 6.',scope,NumObj(54));
+    cval('4 + (5 * 6).',scope,NumObj(34));
+})
+test('booleans',() => {
+    let scope:Obj = make_default_scope();
+    cval('true .',scope,BoolObj(true));
+    cval('false .',scope,BoolObj(false));
+    cval('4 < 5 .',scope,BoolObj(true));
+    cval('4 > 5 .',scope,BoolObj(false));
+    cval('4 == 4 .',scope,BoolObj(true));
+    cval('4 == 5 .',scope,BoolObj(false));
+})
+test('nil',() => {
+    let scope:Obj = make_default_scope();
+    cval(`nil .`,scope, NilObj())
 })
 
 no_test('Debug tests',() => {
