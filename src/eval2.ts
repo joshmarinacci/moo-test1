@@ -60,7 +60,7 @@ class Obj {
     has_slot(name: string) {
         return this.slots.has(name)
     }
-    get_slot(name: string) {
+    get_slot(name: string):Obj {
         return this.slots.get(name)
     }
 
@@ -73,7 +73,7 @@ class Obj {
             return this.parent.lookup_slot(name)
         }
         console.warn(`slot '${name}' not found!`)
-        return null
+        return NilObj()
     }
 
     get_js_slot(name: string):unknown {
@@ -103,7 +103,7 @@ class MethodObject {
 }
 
 const ObjectProto = new Obj("ObjectProto", null,{
-    'makeSlot':(rec:Obj, args:Array<Obj>) => {
+    'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
         d.p("inside make slot on",rec)
         d.p('args are',args)
         let slot_name = args[0].get_js_slot('value') as string;
@@ -113,18 +113,19 @@ const ObjectProto = new Obj("ObjectProto", null,{
             d.p('setting a block. making it a method')
             slot_value.parent = rec
         }
-        return null;
+        return NilObj();
     },
-    'getSlot':(rec:Obj, args:Array<Obj>)=> {
+    'getSlot':(rec:Obj, args:Array<Obj>):Obj => {
         d.p("inside get slot")
         let slot_name = args[0].get_js_slot('value') as string;
         return rec.get_slot(slot_name)
     },
-    'setSlot':(rec:Obj, args:Array<Obj>)=> {
+    'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
         d.p("inside set slot")
         let slot_name = args[0].get_js_slot('value') as string;
         let slot_value = args[1]
-        return rec.set_slot(slot_name,slot_value)
+        rec.set_slot(slot_name,slot_value)
+        return NilObj()
     },
     'clone':(rec:Obj) => {
         d.p("doing clone of ",rec)
@@ -134,7 +135,42 @@ const ObjectProto = new Obj("ObjectProto", null,{
 const NilProto = new Obj("NilProto",ObjectProto,{});
 const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
-const BooleanProto = new Obj("BooleanProto",ObjectProto,{});
+
+const BooleanProto = new Obj("BooleanProto",ObjectProto,{
+    'if_true':(rec:Obj, args:Array<Obj>):Obj => {
+        let val = rec.get_js_slot('value') as boolean
+        d.p(`value is ${val}`)
+        if(val) {
+            return args[0]
+        }
+        return NilObj()
+    },
+    'if_false':(rec:Obj, args:Array<Obj>):Obj => {
+        let val = rec.get_js_slot('value') as boolean
+        d.p(`value is ${val}`)
+        if(!val) {
+            return args[0]
+        }
+        return NilObj()
+    },
+    'cond':(rec:Obj, args:Array<Obj>):Obj => {
+        let val = rec.get_js_slot('value') as boolean
+        d.p(`value is ${val}`)
+        if(val) {
+            let clause = args[0]
+            if (clause.name === 'Block') {
+                return eval_block_obj(clause)
+            }
+            return clause
+        } else {
+            let clause = args[1]
+            if (clause.name === 'Block') {
+                return eval_block_obj(clause)
+            }
+            return clause
+        }
+    }
+});
 const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value':value})
 
 const js_num_op = (cb:(a:number,b:number)=>number) => {
@@ -203,6 +239,13 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
     }
 })
 
+
+function eval_block_obj(clause: Obj) {
+    d.p("evaluating a block",clause)
+    let meth = clause.get_js_slot('invoke') as Function
+    d.p('now method is',meth)
+    return meth(clause,[])
+}
 
 function send_message(objs: Obj[], scope: Obj):Obj {
     if (objs.length < 1) {
@@ -409,6 +452,20 @@ test('strings',() => {
     let scope = make_default_scope()
     cval('"foo" .', scope,StrObj("foo"))
     cval('"foo" + "bar" .', scope,StrObj("foobar"))
+})
+test('conditions',() => {
+    let scope = make_default_scope()
+    cval(` (4 < 5) if_true 88.`,scope,NumObj(88))
+    cval(` (4 > 5) if_true 88.`,scope,NilObj())
+    cval(` (4 < 5) if_false 88.`,scope,NilObj())
+    cval(` (4 > 5) if_false 88.`,scope,NumObj(88))
+
+    cval(` (4 < 5) cond 88 89.`,scope,NumObj(88))
+    cval(` (4 > 5) cond 88 89.`,scope,NumObj(89))
+    cval(` (4 < 5) cond (44+44) 89.`,scope,NumObj(88))
+
+    cval(` (4 < 5) cond [88.] [89.].`,scope,NumObj(88))
+    cval(` (4 > 5) cond [88.] [89.].`,scope,NumObj(89))
 })
 
 no_test('Debug tests',() => {
