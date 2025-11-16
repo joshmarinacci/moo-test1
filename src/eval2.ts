@@ -23,6 +23,38 @@ class Obj {
     make_slot(name: string, obj: Obj) {
         this.slots.set(name,obj)
     }
+    set_slot(slot_name: string, slot_value: Obj) {
+        d.p(`setting slot ${slot_name} to `,slot_value.print(1))
+        d.p("on object",this.print(2))
+        if(this.slots.has(slot_name)) {
+            this.slots.set(slot_name, slot_value)
+        }
+        // d.p(this)
+    }
+    print(depth:number):string {
+        if (depth < 1) {
+            return this.name
+        }
+        let slots = Array.from(this.slots.keys()).map(key => {
+            let val:unknown = this.slots.get(key)
+            if (val instanceof Obj) {
+                if (val.name === 'Block') {
+                    val = 'Block'
+                } else {
+                    val = val.print(depth - 1)
+                }
+            } else {
+                if (val instanceof Function) {
+                    val = "<function>"
+                } else {
+                    val = val.toString()
+                }
+            }
+            return key + ":" + val
+        })
+        let parent = this.parent?this.parent.print(1):'nil'
+        return `${this.name} {${slots.join('\n')}}\n ${parent} `
+    }
     has_slot(name: string) {
         return this.slots.has(name)
     }
@@ -31,7 +63,7 @@ class Obj {
     }
 
     lookup_slot(name: string):Obj {
-        d.p('looking up name',name,'on',this)
+        d.p('looking up name',name,'on',this.print(2))
         if(this.slots.has(name)) {
             return this.slots.get(name)
         }
@@ -59,6 +91,7 @@ class Obj {
         }
         return slots
     }
+
 }
 
 class MethodObject {
@@ -85,22 +118,54 @@ const ObjectProto = new Obj("ObjectProto", null,{
         let slot_name = args[0].get_js_slot('value') as string;
         return rec.get_slot(slot_name)
     },
+    'setSlot':(rec:Obj, args:Array<Obj>)=> {
+        d.p("inside set slot")
+        let slot_name = args[0].get_js_slot('value') as string;
+        let slot_value = args[1]
+        return rec.set_slot(slot_name,slot_value)
+    },
     'clone':(rec:Obj) => {
         d.p("doing clone of ",rec)
         return rec.clone();
     }
 });
+
+const DebugProto = new Obj("DebugProto",ObjectProto,{
+    'equals':(rec:Obj, args:Array<Obj>) => {
+        d.p("comparing",args[0],'to',args[1])
+        assert.deepStrictEqual(args[0],args[1])
+    },
+    'print':(rec:Obj, args:Array<Obj>) => {
+        d.p("debug printing")
+    }
+})
 const NumberProto = new Obj("NumberProto",ObjectProto,{
     '+':(rec:Obj, args:Array<Obj>) => {
         let a= rec.get_js_slot('value') as number
         let b = args[0].get_js_slot('value') as number
         return NumObj(a + b)
+    },
+    '-':(rec:Obj, args:Array<Obj>) => {
+        let a= rec.get_js_slot('value') as number
+        let b = args[0].get_js_slot('value') as number
+        return NumObj(a - b)
+    },
+    '*':(rec:Obj, args:Array<Obj>) => {
+        let a= rec.get_js_slot('value') as number
+        let b = args[0].get_js_slot('value') as number
+        return NumObj(a * b)
+    },
+    '/':(rec:Obj, args:Array<Obj>) => {
+        let a= rec.get_js_slot('value') as number
+        let b = args[0].get_js_slot('value') as number
+        return NumObj(a / b)
     }
 });
 const StringProto = new Obj("StringProto",ObjectProto,{});
+const BooleanProto = new Obj("BooleanProto",ObjectProto,{});
 const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
+const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value':value})
 const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'value': value})
-
 const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'value':value})
 const BlockProto = new Obj("BlockProto",ObjectProto,{
     'invoke':(rec:Obj,args:Array<Obj>) => {
@@ -188,7 +253,7 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
         if (id.value === 'self') {
             return scope
         }
-        d.p("in context",scope)
+        d.p("in context",scope.print(2))
         let found = scope.lookup_slot(id.value)
         d.p("found",found)
         // if(found) return found
@@ -227,7 +292,7 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
         blk2.name = 'Block'
         blk2.make_slot('args',blk.args);
         blk2.make_slot('body',blk.body);
-        blk2.make_slot('parent',scope)
+        // blk2.make_slot('parent',scope)
         blk2.parent = scope;
         return blk2
         // return new Obj("Block",BlockProto,{args:blk.args,body:blk.body,scope:scope})
@@ -251,7 +316,14 @@ function make_default_scope():Obj {
     let scope = new Obj("Global",ObjectProto,{});
     scope.make_slot("Object",ObjectProto)
     scope.make_slot("Number",NumberProto)
+    scope.make_slot("Debug",DebugProto)
+    scope.make_slot("Boolean",BooleanProto)
+    scope.make_slot("true",BoolObj(true))
+    scope.make_slot("false",BoolObj(false))
     return scope
+}
+const no_test = (name:string, cb:unknown) => {
+
 }
 
 test('scope tests',() => {
@@ -292,11 +364,59 @@ test('scope tests',() => {
         ] invoke.
     ] invoke .`,scope,NumObj(5))
 })
+test('boolean tests',() => {
+    let scope:Obj = make_default_scope();
+    cval('true .',scope,BoolObj(true));
+    cval('false .',scope,BoolObj(false));
+})
+test('number tests',() => {
+    let scope:Obj = make_default_scope();
+    cval('4 .',scope,NumObj(4));
+    cval('4 + 5.',scope,NumObj(9));
+    cval('4 - 5.',scope,NumObj(-1));
+    cval('4 * 2.',scope,NumObj(8));
+    cval('4 / 2.',scope,NumObj(2));
+})
 
+no_test('Debug tests',() => {
+    let scope = make_default_scope()
+    // cval(`Debug print 0.`,scope,NumObj(0))
+    cval(`Debug equals 0 0.`,scope,NumObj(0))
+})
+
+no_test('Point class',() => {
+    let scope = make_default_scope()
+
+    cval(`[
+        self makeSlot "PointProto" (Object clone).
+        PointProto makeSlot "magnitude" [
+            Debug print "foo" self.
+            self x.
+        ].
+        self makeSlot "Point" (PointProto clone).
+        Point makeSlot "x" 0.
+        Point makeSlot "y" 0.
+        
+        self makeSlot "pt" (Point clone).
+
+        Debug equals (pt x) 0.
+        
+        pt setSlot "x" 88.
+        
+        Debug equals (pt magnitude) 88.
+                
+        pt x.
+    ] invoke .`,scope,NumObj(88))
+})
 /*
 
 add NilObject and nil global symbols.
 add BooleanObject and true and false global symbols.
 implement if_true with tests
 try to implement Point class now
+
+pt should copy all slots of Point, but Point should not copy all slots of PointProto.
+instead we need a copy method which makes a new object with that as the parent
+but does not copy the slots.
+
  */
