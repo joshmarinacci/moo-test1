@@ -26,8 +26,8 @@ class Obj {
         this.slots.set(name,obj)
     }
     set_slot(slot_name: string, slot_value: Obj) {
-        d.p(`setting slot ${slot_name} to `,slot_value.print(1))
-        d.p("on object",this.print(2))
+        // d.p(`setting slot ${slot_name} to `,slot_value.print(1))
+        // d.p("on object",this.print(2))
         if(this.slots.has(slot_name)) {
             this.slots.set(slot_name, slot_value)
         }
@@ -104,7 +104,7 @@ const ObjectProto = new Obj("ObjectProto", null,{
         let slot_value = args[1]
         rec.make_slot(slot_name,slot_value)
         if (slot_value.name === 'Block') {
-            d.p('setting a block. making it a method')
+            // d.p(`setting a block. making it a method ${slot_name} : ${slot_value.name}`)
             slot_value.parent = rec
         }
         return NilObj();
@@ -185,12 +185,12 @@ const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'val
 
 const DebugProto = new Obj("DebugProto",ObjectProto,{
     'equals':(rec:Obj, args:Array<Obj>) => {
-        d.p("comparing",args[0],'to',args[1])
+        // d.p("comparing".toUpperCase(),args[0],'to',args[1])
         assert.deepStrictEqual(args[0],args[1])
         return NilObj()
     },
     'print':(rec:Obj, args:Array<Obj>) => {
-        d.p("debug printing")
+        d.p("debug printing".toUpperCase())
         d.p(args)
         return NilObj()
     }
@@ -266,7 +266,8 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         return method
     }
     if (method.name === 'Block') {
-        // d.p("is a block")
+        // d.p("is a block as a method call")
+        method.parent = rec
         let meth = method.get_js_slot('invoke') as Function
         // d.p('now method is',meth)
         return meth(method,objs.slice(2))
@@ -381,6 +382,12 @@ test('scope tests',() => {
           v.
         ] invoke.
     ] invoke .`,scope,NumObj(5))
+
+    cval(`[
+        self makeSlot "x" 5.
+        self makeSlot "w" [ self x. ].
+        self w.
+    ] invoke .`,scope,NumObj(5))
 })
 test('nil',() => {
     let scope:Obj = make_default_scope();
@@ -426,43 +433,33 @@ test('conditions',() => {
     cval(` (4 > 5) cond [88.] [89.].`,scope,NumObj(89))
 })
 
-no_test('Debug tests',() => {
+test('Debug tests',() => {
     let scope = make_default_scope()
-    // cval(`Debug print 0.`,scope,NumObj(0))
-    cval(`Debug equals 0 0.`,scope,NumObj(0))
+    cval(`Debug print 0.`,scope,NilObj())
+    cval(`Debug equals 0 0.`,scope,NilObj())
+    cval(`Debug print 0 0.`,scope,NilObj())
 })
 
-no_test('Point class',() => {
+test('Point class',() => {
     let scope = make_default_scope()
 
     cval(`[
         self makeSlot "PointProto" (Object clone).
         PointProto makeSlot "magnitude" [
-            Debug print "foo" self.
             self x.
         ].
         self makeSlot "Point" (PointProto clone).
         Point makeSlot "x" 0.
         Point makeSlot "y" 0.
-        
-        self makeSlot "pt" (Point clone).
 
+        self makeSlot "pt" (Point clone).
+        pt makeSlot "name" "Point".
+        Debug print "foo".
+        Debug equals 0 0.
         Debug equals (pt x) 0.
-        
         pt setSlot "x" 88.
-        
-        Debug equals (pt magnitude) 88.
-                
-        pt x.
+        Debug equals (pt x) 88.
+        Debug print (pt).
+        pt magnitude.
     ] invoke .`,scope,NumObj(88))
 })
-/*
-
-
-try to implement Point class now
-
-pt should copy all slots of Point, but Point should not copy all slots of PointProto.
-instead we need a copy method which makes a new object with that as the parent
-but does not copy the slots.
-
- */
