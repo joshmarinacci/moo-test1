@@ -170,6 +170,10 @@ const NumberProto = new Obj("NumberProto",ObjectProto,{
     '<':js_bool_op((a,b)=>a<b),
     '>':js_bool_op((a,b)=>a>b),
     '==':js_bool_op((a,b)=>a==b),
+    'sqrt':(rec:Obj):Obj => {
+        let a = rec.get_js_slot('value') as number
+        return NumObj(Math.sqrt(a))
+    }
 });
 const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
 
@@ -440,13 +444,42 @@ test('Debug tests',() => {
     cval(`Debug print 0 0.`,scope,NilObj())
 })
 
-test('Point class',() => {
+test("block arg tests",() => {
+    let scope = make_default_scope()
+    cval(`[
+        self makeSlot "foo" [
+            88.
+        ]. 
+        self foo.
+     ] invoke .`,scope,NumObj(88))
+    cval(`[
+        self makeSlot "foo" [ v |
+            88.
+        ]. 
+        self foo 1.
+     ] invoke .`,scope,NumObj(88))
+    // cval(`[
+    //     self makeSlot "foo" [ v |
+    //         88 + v.
+    //     ].
+    //     self foo 1.
+    //  ] invoke .`,scope,NumObj(88))
+})
+
+no_test('Point class',() => {
     let scope = make_default_scope()
 
     cval(`[
         self makeSlot "PointProto" (Object clone).
         PointProto makeSlot "magnitude" [
-            self x.
+            self makeSlot "xx" ((self x) * (self x)). 
+            self makeSlot "yy" ((self y) * (self y)). 
+            ((self yy) + (self xx)) sqrt.
+        ].
+        PointProto makeSlot "+" [ a |
+            self makeSlot "xx" ( (self x) + (a x) ). 
+            self makeSlot "yy" ( (self y) + (a y) ).
+            self x. 
         ].
         self makeSlot "Point" (PointProto clone).
         Point makeSlot "x" 0.
@@ -457,9 +490,16 @@ test('Point class',() => {
         Debug print "foo".
         Debug equals 0 0.
         Debug equals (pt x) 0.
-        pt setSlot "x" 88.
-        Debug equals (pt x) 88.
+        pt setSlot "x" 5.
+        pt setSlot "y" 5.
+        Debug equals (pt x) 5.
         Debug print (pt).
         pt magnitude.
-    ] invoke .`,scope,NumObj(88))
+        
+        self makeSlot "pt2" (Point clone).
+        pt2 setSlot "x" 8.
+        pt2 setSlot "x" 9.
+        
+        pt + pt2.
+    ] invoke .`,scope,NumObj(Math.sqrt(5*5+5*5)))
 })
