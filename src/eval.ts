@@ -3,6 +3,7 @@ import {strict as assert} from "assert";
 import {Ast, Blk, BlockAst, GroupAst, Grp, Id, IdAst, Num, NumAst, Stmt, StmtAst, Str, StrAst} from "./ast.ts"
 
 import {parseAst} from "./parser.ts"
+import {JoshLogger} from "./util.ts";
 
 class Obj {
     proto: Obj | null
@@ -349,31 +350,6 @@ type DeepStrictEqual<T> = (actual: unknown, expected:T, message?: string | Error
 let comp:DeepStrictEqual<unknown> = assert.deepStrictEqual;
 
 
-class JoshLogger {
-    insetCount: number
-    constructor() {
-        this.insetCount = 0
-    }
-    p(...args:any[]) {
-        console.log(this.generate_tab(),...args)
-    }
-
-    private generate_tab() {
-        let tab = ""
-        for(let i=0; i<this.insetCount; i++) {
-            tab += "---"
-        }
-        return tab
-    }
-
-    indent() {
-        this.insetCount += 1
-    }
-
-    outdent() {
-        this.insetCount -= 1
-    }
-}
 const l = new JoshLogger();
 
 function pval(code: string, scope: Obj):Obj {
