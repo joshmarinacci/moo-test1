@@ -65,7 +65,7 @@ class Obj {
     }
 
     lookup_slot(name: string):Obj {
-        d.p('looking up name',name,'on',this.print(2))
+        // d.p('looking up name',name,'on',this.print(2))
         if(this.slots.has(name)) {
             return this.slots.get(name)
         }
@@ -96,16 +96,10 @@ class Obj {
 
 }
 
-class MethodObject {
-    invoke(rec: Obj, args: Obj[]) {
-        d.p("real method",rec,args)
-    }
-}
-
 const ObjectProto = new Obj("ObjectProto", null,{
     'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        d.p("inside make slot on",rec)
-        d.p('args are',args)
+        // d.p("inside make slot on",rec)
+        // d.p('args are',args)
         let slot_name = args[0].get_js_slot('value') as string;
         let slot_value = args[1]
         rec.make_slot(slot_name,slot_value)
@@ -116,19 +110,19 @@ const ObjectProto = new Obj("ObjectProto", null,{
         return NilObj();
     },
     'getSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        d.p("inside get slot")
+        // d.p("inside get slot")
         let slot_name = args[0].get_js_slot('value') as string;
         return rec.get_slot(slot_name)
     },
     'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
-        d.p("inside set slot")
+        // d.p("inside set slot")
         let slot_name = args[0].get_js_slot('value') as string;
         let slot_value = args[1]
         rec.set_slot(slot_name,slot_value)
         return NilObj()
     },
     'clone':(rec:Obj) => {
-        d.p("doing clone of ",rec)
+        // d.p("doing clone of ",rec)
         return rec.clone();
     }
 });
@@ -139,36 +133,17 @@ const NilObj = () => new Obj("NilLiteral", NilProto, {})
 const BooleanProto = new Obj("BooleanProto",ObjectProto,{
     'if_true':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec.get_js_slot('value') as boolean
-        d.p(`value is ${val}`)
-        if(val) {
-            return args[0]
-        }
+        if(val) return eval_block_obj(args[0])
         return NilObj()
     },
     'if_false':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec.get_js_slot('value') as boolean
-        d.p(`value is ${val}`)
-        if(!val) {
-            return args[0]
-        }
+        if(!val) return eval_block_obj(args[0])
         return NilObj()
     },
     'cond':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec.get_js_slot('value') as boolean
-        d.p(`value is ${val}`)
-        if(val) {
-            let clause = args[0]
-            if (clause.name === 'Block') {
-                return eval_block_obj(clause)
-            }
-            return clause
-        } else {
-            let clause = args[1]
-            if (clause.name === 'Block') {
-                return eval_block_obj(clause)
-            }
-            return clause
-        }
+        return eval_block_obj(val?args[0]:args[1])
     }
 });
 const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value':value})
@@ -212,20 +187,23 @@ const DebugProto = new Obj("DebugProto",ObjectProto,{
     'equals':(rec:Obj, args:Array<Obj>) => {
         d.p("comparing",args[0],'to',args[1])
         assert.deepStrictEqual(args[0],args[1])
+        return NilObj()
     },
     'print':(rec:Obj, args:Array<Obj>) => {
         d.p("debug printing")
+        d.p(args)
+        return NilObj()
     }
 })
 const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'value':value})
 const BlockProto = new Obj("BlockProto",ObjectProto,{
     'invoke':(rec:Obj,args:Array<Obj>) => {
         // d.p("this is a block invocation")
-        d.p("rec",rec)
+        // d.p("rec",rec)
         // if (rec.name !== 'Block') {
         //     throw new Error("cannot use 'invoke' on something that isn't a Block")
         // }
-        let body:Array<StmtAst> = rec.get_js_slot('body')
+        let body = rec.get_js_slot('body') as Array<StmtAst>
         // d.p("body",body)
         if(!Array.isArray(body)) {
             console.error(body)
@@ -241,9 +219,10 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
 
 
 function eval_block_obj(clause: Obj) {
-    d.p("evaluating a block",clause)
+    if (clause.name !== 'Block') {
+        return clause
+    }
     let meth = clause.get_js_slot('invoke') as Function
-    d.p('now method is',meth)
     return meth(clause,[])
 }
 
@@ -253,7 +232,7 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         return null
     }
     if(objs.length == 1) {
-        d.p("message is only the receiver")
+        // d.p("message is only the receiver")
         let rec = objs[0]
         // d.p(rec)
         // d.p("in the scope",scope)
@@ -262,24 +241,24 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         }
         return rec
     }
-    d.p("sending message")
+    // d.p("sending message")
     let rec = objs[0]
-    d.p('receiver',rec.name)
+    // d.p('receiver',rec.name)
     if (rec.name === 'SymbolReference') {
         rec = scope.lookup_slot(rec.get_js_slot('value') as string)
-        d.p("better receiver is", rec)
+        // d.p("better receiver is", rec)
     }
 
     let message = objs[1]
     // d.p("message",objs[1])
     // d.p("args",objs.slice(2))
     let message_name = message.get_js_slot('value') as string
-    d.p(`message name: '${message_name}' `)
+    // d.p(`message name: '${message_name}' `)
     if (message_name === 'value') {
         return rec
     }
     let method = rec.lookup_slot(message_name)
-    d.p("got the method",method)
+    // d.p("got the method",method)
     if (method instanceof Function) {
         return method(rec,objs.slice(2))
     }
@@ -287,73 +266,52 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         return method
     }
     if (method.name === 'Block') {
-        d.p("is a block")
+        // d.p("is a block")
         let meth = method.get_js_slot('invoke') as Function
-        d.p('now method is',meth)
+        // d.p('now method is',meth)
         return meth(method,objs.slice(2))
     }
     return method.invoke(rec,objs.slice(2))
 }
 
 function eval_ast(ast:Ast, scope:Obj):Obj {
-    // d.p("eval",ast)
     if (ast.type === 'num') {
-        let num:NumAst = ast;
-        // d.p("number")
-        return NumObj(num.value)
+        return NumObj((ast as NumAst).value)
     }
     if (ast.type === "str") {
         return StrObj((ast as StrAst).value)
     }
     if (ast.type === 'id') {
-        let id:IdAst = ast;
-        d.p(`resolving id '${id.value}'`)
+        let id = ast as IdAst;
         if (id.value === 'self') {
             return scope
         }
-        d.p("in context",scope.print(2))
-        let found = scope.lookup_slot(id.value)
-        d.p("found",found)
-        // if(found) return found
-        // if (scope.hasSlot(id.value)) {
-        //     return scope.getSlot(id.value)
-        // } else {
-        //     d.p("scope does not have the slot",scope)
         return SymRef(id.value)
-        // }
     }
     if (ast.type === 'group') {
-        let group:GroupAst = ast;
+        let group = ast as GroupAst;
         d.indent()
-        d.p("group");
         let objs = group.value.map(a => eval_ast(a,scope))
         let ret = send_message(objs,scope)
-        d.p("done with group")
         d.outdent()
         return ret
     }
     if (ast.type === 'stmt') {
-        let stmt:StmtAst = ast;
-        d.p("statement")
+        let stmt = ast as StmtAst;
         d.indent()
         let objs = stmt.value.map(a => eval_ast(a,scope))
-        // d.p("objects",objs)
         let ret = send_message(objs,scope)
-        d.p("done with statement")
         d.outdent()
         return ret
     }
     if (ast.type === 'block') {
-        let blk:BlockAst = ast as BlockAst;
-        d.p("block")
+        let blk = ast as BlockAst;
         let blk2 = BlockProto.clone()
         blk2.name = 'Block'
         blk2.make_slot('args',blk.args);
         blk2.make_slot('body',blk.body);
-        // blk2.make_slot('parent',scope)
         blk2.parent = scope;
         return blk2
-        // return new Obj("Block",BlockProto,{args:blk.args,body:blk.body,scope:scope})
     }
     console.error("unknown ast type",ast)
     throw new Error(`unknown ast type ${ast.type}`)
@@ -363,11 +321,11 @@ function cval(code:string, scope:Obj, expected:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
     let ast = parseAst(code);
-    d.p('ast is',ast)
-    d.p(ast)
+    // d.p('ast is',ast)
+    // d.p(ast)
     let obj = eval_ast(ast,scope);
-    d.p("returned")
-    d.p(obj)
+    // d.p("returned")
+    // d.p(obj)
     assert.deepStrictEqual(obj,expected)
 }
 function make_default_scope():Obj {
@@ -500,7 +458,7 @@ no_test('Point class',() => {
 })
 /*
 
-implement if_true with tests
+
 try to implement Point class now
 
 pt should copy all slots of Point, but Point should not copy all slots of PointProto.
