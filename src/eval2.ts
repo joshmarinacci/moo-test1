@@ -486,12 +486,6 @@ test("block arg tests",() => {
         ]. 
         self foo 1.
      ] invoke .`,scope,NumObj(88))
-    // cval(`[
-    //     self makeSlot "foo" [ v |
-    //         88 + v.
-    //     ].
-    //     self foo 1.
-    //  ] invoke .`,scope,NumObj(88))
     cval(`[
         self makeSlot "foo" [ v |
             88 + v.
@@ -499,19 +493,19 @@ test("block arg tests",() => {
         self foo 1.
      ] invoke .`,scope,NumObj(89))
 
-    // cval(`[
-    //     self makeSlot "foo" (Object clone).
-    //     foo makeSlot "bar" 88.
-    //     Debug equals (foo bar) 88.
-    //     foo makeSlot "get_bar" [
-    //         self bar.
-    //     ].
-    //     Debug equals (foo get_bar) 88.
-    //     foo makeSlot "get_bar_better" [
-    //         bar.
-    //     ].
-    //     Debug equals (foo get_bar_better) 88.
-    // ] invoke . `,scope, NumObj(88))
+    cval(`[
+        self makeSlot "foo" (Object clone).
+        foo makeSlot "bar" 88.
+        Debug equals (foo bar) 88.
+        foo makeSlot "get_bar" [
+            self bar.
+        ].
+        Debug equals (foo get_bar) 88.
+        foo makeSlot "get_bar_better" [
+            bar.
+        ].
+        Debug equals (foo get_bar_better) 88.
+    ] invoke . `,scope, NilObj())
 })
 
 no_test('Point class',() => {
