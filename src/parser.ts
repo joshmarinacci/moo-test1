@@ -202,23 +202,13 @@ export let RealExp = Lit("dummy")
 let Exp = (input:InputStream) => RealExp(input)
 export let Group = withProduction(
     Seq(ws(Lit('(')),ZeroOrMore(Seq(ws(Exp))),ws(Lit(')')))
-    ,(res)=>{
-        let value = res.production as unknown as Array<Ast>
-        value = (value[1] as unknown as Array<Ast>).flat()
-        return Grp(...value)
-    })
+    ,(res)=> Grp(...(res.production[1].flat())))
 export let Statement = withProduction(
     Seq(OneOrMore(ws(Exp)),Lit("."))
-    ,(res)=>{
-        let vals = res.production[0]
-        return Stmt(...vals)
-    })
-
+    ,(res)=> Stmt(...(res.production[0])))
 export let BlockArgs = withProduction(
     Seq(ZeroOrMore(Seq(ws(Identifier))),ws(Lit("|"))),
-    (res)=>{
-        return res.production[0].flat().filter(v => v !== undefined)
-    }
+    (res)=> res.production[0].flat()
 )
 export let Block = withProduction(
     Seq(Lit('['), Optional(BlockArgs), ZeroOrMore(Statement),ws(Optional(Exp)),Lit("]"))
@@ -231,9 +221,7 @@ export let Block = withProduction(
 // fix the recursion
 RealExp = withProduction(
     Or(Integer,Identifier,Operator,StringLiteral,Group,Block)
-    ,(res)=>{
-    return res.production
-})
+    ,(res)=> res.production)
 
 
 export function parseAst(source:string):Ast {
