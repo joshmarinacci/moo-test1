@@ -35,4 +35,8 @@ export class JoshLogger {
     disable() {
         this.enabled = false
     }
+
+    warn(s: string) {
+        console.log(this.generate_tab(), s)
+    }
 }

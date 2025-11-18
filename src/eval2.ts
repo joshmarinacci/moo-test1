@@ -88,7 +88,7 @@ class Obj {
                 return this.parent.safe_lookup_slot(name, depth - 1)
             }
         }
-        d.p(`slot not found!: '${name}'`)
+        d.warn(`slot not found!: '${name}'`)
         return NilObj()
     }
 
@@ -111,6 +111,10 @@ class Obj {
     }
 
     dump() {
+        if (this.name === 'NumberLiteral') {
+            d.p("numberLiteral: " + this.get_js_slot('value'))
+            return;
+        }
         d.p(this.name)
         d.indent()
         for(let key of this.slots.keys()) {
@@ -130,7 +134,10 @@ class Obj {
             d.p("ending")
         } else {
             if(this.parent) {
+                d.p("parent")
+                d.indent()
                 this.parent.dump()
+                d.outdent()
             }
         }
         d.outdent()
@@ -308,6 +315,7 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         d.p(rec)
         d.p("in the scope",scope)
         if (rec.name === 'SymbolReference') {
+            d.p("returning " + " " + rec.get_slot('value') as string)
             return scope.lookup_slot(rec.get_js_slot('value') as string)
         }
         return rec
@@ -415,6 +423,7 @@ function cval(code:string, scope:Obj, expected:Obj) {
     // d.p(ast)
     let obj = eval_ast(ast,scope);
     // d.p("returned")
+    // obj.dump()
     // d.p(obj)
     assert.deepStrictEqual(obj,expected)
 }
@@ -565,46 +574,53 @@ test("block arg tests",() => {
     ] invoke . `,scope, NilObj())
 })
 
-no_test('Point class',() => {
+test('Point class',() => {
     let scope = make_default_scope()
 
     cval(`[
-        self makeSlot "PointProto" (Object clone).
+        Global makeSlot "PointProto" (Object clone).
+        PointProto makeSlot "name" "PointProto".
         PointProto makeSlot "magnitude" [
             self makeSlot "xx" ((self x) * (self x)). 
             self makeSlot "yy" ((self y) * (self y)). 
             ((self yy) + (self xx)) sqrt.
         ].
         PointProto makeSlot "+" [ a |
+            Debug print "inside of +".
             self makeSlot "xx" ( (self x) + (a x) ). 
+            Debug print "inside of + 2".
             self makeSlot "yy" ( (self y) + (a y) ).
-            self xx.
-            self print.
-            5.
+            Debug print "inside of + 3".
+            self makeSlot "pp" (Point clone).
+            Debug print "inside of + 4".
+            pp setSlot "x" xx.
+            pp setSlot "y" yy.
+            pp.
         ].
-        self makeSlot "Point" (PointProto clone).
+        PointProto makeSlot "print" [
+            (("Point(" + (self x)) + ("," + (self y))) + ")".
+        ].
+        Global makeSlot "Point" (PointProto clone).
         Point makeSlot "x" 0.
         Point makeSlot "y" 0.
+        Point makeSlot "name" "Point".
 
         self makeSlot "pt" (Point clone).
-        pt makeSlot "name" "Point".
-        Debug print "foo".
-        Debug equals 0 0.
         Debug equals (pt x) 0.
         pt setSlot "x" 5.
         pt setSlot "y" 5.
         Debug equals (pt x) 5.
-        Debug print (pt).
         pt magnitude.
         
         self makeSlot "pt2" (Point clone).
         pt2 setSlot "x" 1.
         pt2 setSlot "y" 1.
         
-        pt + pt2.
+        self makeSlot "pt3" (pt + pt2).
+        pt3 dump.
+        pt3 print.
     ] invoke .`,scope,
-        NumObj(6)
-        // NumObj(Math.sqrt(5*5+5*5))
+        StrObj("Point(6,6)")
     )
 })
 
