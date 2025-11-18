@@ -1,12 +1,16 @@
 export class JoshLogger {
     insetCount: number
+    enabled: boolean
 
     constructor() {
         this.insetCount = 0
+        this.enabled = true
     }
 
     p(...args: any[]) {
-        console.log(this.generate_tab(), ...args)
+        if(this.enabled) {
+            console.log(this.generate_tab(), ...args)
+        }
     }
 
     private generate_tab() {
@@ -23,5 +27,12 @@ export class JoshLogger {
 
     outdent() {
         this.insetCount -= 1
+    }
+
+    enable() {
+        this.enabled = true
+    }
+    disable() {
+        this.enabled = false
     }
 }

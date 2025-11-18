@@ -69,10 +69,10 @@ class Obj {
         if (name === 'self') {
             return this
         }
-        return this.safe_lookup_slot(name, 5);
+        return this.safe_lookup_slot(name, 7);
     }
     safe_lookup_slot(name: string, depth: number): Obj {
-        // d.p("safe lookup slot",depth ,name)
+        // d.p("safe lookup slot",depth ,name,'on',this.name)
         if(depth < 1) {
             throw new Error("recursed too deep!")
         }
@@ -116,7 +116,11 @@ class Obj {
         for(let key of this.slots.keys()) {
             let value = this.slots.get(key)
             if (value instanceof Obj) {
-                d.p("slot " + key, value.name + "")
+                if (value.has_slot('value')) {
+                    d.p("slot " + key, value.name, value.get_js_slot('value') + "")
+                } else {
+                    d.p("slot " + key, value.name + "")
+                }
             }
             if (value instanceof Function) {
                 d.p("slot " + key + " native function")
@@ -133,7 +137,7 @@ class Obj {
     }
 }
 
-const ObjectProto = new Obj("ObjectProto", null,{
+const ROOT = new Obj("ROOT", null,{
     'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
         // d.p("inside make slot on",rec)
         // d.p('args are',args)
@@ -167,6 +171,7 @@ const ObjectProto = new Obj("ObjectProto", null,{
         return NilObj()
     }
 });
+const ObjectProto = new Obj("ObjectProto", ROOT, {})
 const NilProto = new Obj("NilProto",ObjectProto,{});
 const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
@@ -298,43 +303,43 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         return null
     }
     if(objs.length == 1) {
-        // d.p("message is only the receiver")
+        d.p("message is only the receiver")
         let rec = objs[0]
-        // d.p(rec)
-        // d.p("in the scope",scope)
+        d.p(rec)
+        d.p("in the scope",scope)
         if (rec.name === 'SymbolReference') {
             return scope.lookup_slot(rec.get_js_slot('value') as string)
         }
         return rec
     }
-    // d.p("sending message")
+    d.p("sending message")
     let rec = objs[0]
-    // d.p('receiver',rec.name)
+    d.p('receiver',rec.name)
     if (rec.name === 'SymbolReference') {
         rec = scope.lookup_slot(rec.get_js_slot('value') as string)
-        // d.p("better receiver is", rec)
+        d.p("better receiver is", rec)
     }
 
     let message = objs[1]
-    // d.p("message",objs[1])
+    d.p("message",objs[1])
     let message_name = message.get_js_slot('value') as string
-    // d.p(`message name: '${message_name}' `)
+    d.p(`message name: '${message_name}' `)
     if (message_name === 'value') {
         return rec
     }
     let method = rec.lookup_slot(message_name)
-    // d.p("got the method",method)
+    d.p("got the method",method)
     if (isNil(method)) {
         throw new Error("method is nil!")
     }
     let args:Array<Obj> = objs.slice(2)
-    // d.p("args",args)
+    d.p("args",args)
 
     args = args.map((a:Obj) => {
-        // console.log("arg is",a);
+        d.p("arg is",a);
         if (a.name === 'SymbolReference') {
             let aa = scope.lookup_slot(a.get_js_slot('value') as string)
-            // console.log("found a better value",aa)
+            d.p("found a better value",aa)
             return aa
         }
         return a
@@ -346,11 +351,14 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     if (method.name === 'NumberLiteral') {
         return method
     }
+    if (method.name === 'StringLiteral') {
+        return method
+    }
     if (method.name === 'Block') {
-        // d.p("is a block as a method call")
+        d.p("is a block as a method call")
         method.parent = rec
         let meth = method.get_js_slot('invoke') as Function
-        // d.p('now method is',meth)
+        d.p('now method is',meth)
         return meth(method,args)
     }
     return method.invoke(rec,args)
@@ -379,7 +387,9 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
         let stmt = ast as StmtAst;
         d.indent()
         let objs = stmt.value.map(a => eval_ast(a,scope))
+        // d.enable()
         let ret = send_message(objs,scope)
+        // d.disable()
         d.outdent()
         return ret
     }
@@ -399,8 +409,9 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
 function cval(code:string, scope:Obj, expected:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
+    d.disable()
     let ast = parseAst(code);
-    // d.p('ast is',ast)
+    d.p('ast is',ast)
     // d.p(ast)
     let obj = eval_ast(ast,scope);
     // d.p("returned")
@@ -408,7 +419,7 @@ function cval(code:string, scope:Obj, expected:Obj) {
     assert.deepStrictEqual(obj,expected)
 }
 function make_default_scope():Obj {
-    let scope = new Obj("Global",ObjectProto,{});
+    let scope = new Obj("Global",ROOT,{});
     scope.make_slot("Object",ObjectProto)
     scope.make_slot("Number",NumberProto)
     scope.make_slot("Debug",DebugProto)
@@ -417,6 +428,8 @@ function make_default_scope():Obj {
     scope.make_slot("false",BoolObj(false))
     scope.make_slot("Nil",NilProto)
     scope.make_slot('nil',NilObj())
+    scope.make_slot("Global",scope)
+    ObjectProto.parent = scope;
     return scope
 }
 const no_test = (name:string, cb:unknown) => {
@@ -598,14 +611,26 @@ no_test('Point class',() => {
 test("global scope tests",() => {
     let scope = make_default_scope()
     cval(`[
-        self makeSlot "foo" (Object clone).
-        foo makeSlot "make" [
-            (Object clone).
-        ].
+        Global makeSlot "foo" (Object clone).
+        foo makeSlot "x" 5.
         foo makeSlot "bar" [
-            (self make) dump.
-            nil.
+            self makeSlot "blah" (foo clone).
+            blah x.
         ].
         foo bar.
-    ] invoke .`,scope,NilObj())
+    ] invoke .`,scope,NumObj(5))
+
+    cval(`[
+        Global makeSlot "Foo" (Object clone).
+        Foo makeSlot "make" [
+            self makeSlot "blah" (Foo clone).
+            blah makeSlot "name" "Foo".
+            blah.
+        ].
+        Foo makeSlot "bar" [
+            self makeSlot "blah" (self make).
+            blah name.
+        ].
+        Foo bar.
+    ] invoke .`,scope,StrObj("Foo"))
 })
