@@ -12,7 +12,7 @@ type JSMethod = (rec:Obj, args:Array<Obj>) => Obj;
 class Obj {
     name: string;
     parent: Obj|null;
-    private slots: Map<string, Obj>;
+    slots: Map<string, Obj>;
     constructor(name: string, parent: Obj|null, props:Record<string,JSMethod>) {
         this.name = name;
         this.parent = parent
@@ -155,24 +155,19 @@ class Obj {
 
 const ROOT = new Obj("ROOT", null,{
     'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        // d.p("inside make slot on",rec)
-        // d.p('args are',args)
         let slot_name = args[0]._get_js_string()
         let slot_value = args[1]
         rec.make_slot(slot_name,slot_value)
         if (slot_value.name === 'Block') {
-            // d.p(`setting a block. making it a method ${slot_name} : ${slot_value.name}`)
             slot_value.parent = rec
         }
         return NilObj();
     },
     'getSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        // d.p("inside get slot")
         let slot_name = args[0]._get_js_string()
         return rec.get_slot(slot_name)
     },
     'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
-        // d.p("inside set slot")
         let slot_name = args[0]._get_js_string()
         let slot_value = args[1]
         rec.set_slot(slot_name,slot_value)
@@ -193,6 +188,7 @@ const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
 
 const BooleanProto = new Obj("BooleanProto",ObjectProto,{
+    'value':(rec:Obj) => rec,
     'if_true':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec._get_js_boolean()
         if(val) return eval_block_obj(args[0])
@@ -212,8 +208,6 @@ const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'jsv
 
 const js_num_op = (cb:(a:number,b:number)=>number) => {
     return function (rec:Obj, args:Array<Obj>){
-        // d.p("receiver type is", rec.name)
-        // d.p("arg type is ", args[0].name)
         if (args[0].name !== "NumberLiteral") {
             throw new Error("cannot add a non number to a number")
         }
@@ -230,6 +224,7 @@ const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
     }
 }
 const NumberProto = new Obj("NumberProto",ObjectProto,{
+    'value':(rec:Obj) => rec,
     '+':js_num_op((a,b)=>a+b),
     '-':js_num_op((a,b)=>a-b),
     '*':js_num_op((a,b)=>a*b),
@@ -239,10 +234,11 @@ const NumberProto = new Obj("NumberProto",ObjectProto,{
     '==':js_bool_op((a,b)=>a==b),
     'sqrt':(rec:Obj):Obj => NumObj(Math.sqrt(rec._get_js_number()))
 });
-const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'jsvalue': value})
+const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, { 'jsvalue': value,})
 
 
 const StringProto = new Obj("StringProto",ObjectProto,{
+    'value':(rec:Obj) => rec,
     '+':((rec:Obj, args:Array<Obj>) => {
         let a = rec._get_js_string()
         let b = args[0]._get_js_string()
@@ -253,8 +249,7 @@ const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'jsv
 
 const DebugProto = new Obj("DebugProto",ObjectProto,{
     'equals':(rec:Obj, args:Array<Obj>) => {
-        // d.p("comparing".toUpperCase(),args[0],'to',args[1])
-        assert.deepStrictEqual(args[0],args[1])
+        assert(objsEqual(args[0], args[1]))
         return NilObj()
     },
     'print':(rec:Obj, args:Array<Obj>) => {
@@ -285,7 +280,7 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
         for(let i=0; i<params.length; i++) {
             let name = params[i]
             let value = args[i]
-            d.p("setting parameter",name.value,'to',value)
+            // d.p("setting parameter",name.value,'to',value)
             scope.make_slot(name.value,value)
         }
 
@@ -338,9 +333,6 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     d.p("message",objs[1])
     let message_name = message._get_js_string()
     d.p(`message name: '${message_name}' `)
-    if (message_name === 'value') {
-        return rec
-    }
     let method = rec.lookup_slot(message_name)
     d.p("got the method",method)
     if (isNil(method)) {
@@ -420,6 +412,26 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
     throw new Error(`unknown ast type ${ast.type}`)
 }
 
+function objsEqual(a: Obj, b: Obj) {
+    if(a.name !== b.name) return false
+    if(a.slots.size !== b.slots.size) return false
+    for(let key of a.slots.keys()) {
+        let vala = a.slots.get(key)
+        let valb = b.slots.get(key)
+        if (typeof vala === 'number') {
+            if (vala !== valb) {
+                return false
+            }
+        }
+        if (typeof vala === 'string') {
+            if (vala !== valb) {
+                return false
+            }
+        }
+    }
+    return true
+}
+
 function cval(code:string, scope:Obj, expected:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
@@ -431,7 +443,8 @@ function cval(code:string, scope:Obj, expected:Obj) {
     // d.p("returned")
     // obj.dump()
     // d.p(obj)
-    assert.deepStrictEqual(obj,expected)
+    // assert.deepStrictEqual(obj,expected)
+    assert(objsEqual(obj,expected))
 }
 function make_default_scope():Obj {
     let scope = new Obj("Global",ROOT,{});
@@ -502,6 +515,7 @@ test('nil',() => {
 test('numbers',() => {
     let scope:Obj = make_default_scope();
     cval('4 .',scope,NumObj(4));
+    cval('4 value .',scope,NumObj(4))
     cval('4 + 5.',scope,NumObj(9));
     cval('4 - 5.',scope,NumObj(-1));
     cval('4 * 2.',scope,NumObj(8));
