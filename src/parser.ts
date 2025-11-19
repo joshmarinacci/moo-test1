@@ -162,7 +162,7 @@ export function Seq(...rules:Rule[]):Rule {
     }
 }
 
-function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown):Rule {
+export function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown):Rule {
     return function (input:InputStream) {
         let pass = rule(input)
         if (pass.succeeded()) {
@@ -199,7 +199,7 @@ export let Operator = withProduction(
     Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(">"),Lit(":="),Lit("=="))
     ,(res)=> Id(res.slice)) // operators are identifiers too
 export let RealExp = Lit("dummy")
-let Exp = (input:InputStream) => RealExp(input)
+export let Exp = (input:InputStream) => RealExp(input)
 export let Group = withProduction(
     Seq(ws(Lit('(')),ZeroOrMore(Seq(ws(Exp))),ws(Lit(')')))
     ,(res)=> Grp(...(res.production[1].flat())))
