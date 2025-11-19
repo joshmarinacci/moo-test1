@@ -618,3 +618,33 @@ test("global scope tests",() => {
         Foo bar.
     ] value .`,scope,StrObj("Foo"))
 })
+no_test('assignment operator', () => {
+    let scope = make_default_scope()
+    cval(`v := 5.`,scope,NumObj(5))
+    cval('v.',scope,NumObj(5))
+    cval(`[
+        T := (Object clone).
+        T setSlot "v" 0.
+        T setSlot "sv" [ x |
+           super setSlot "v" x.
+           self v.
+        ].
+        T setSlot "gv" [
+          self v.
+        ].
+        T sv 88.
+        T gv.
+    ] invoke.`,scope,NumObj(88))
+})
+no_test ('fib recursion',() => {
+    let scope = make_default_scope()
+    cval(`[
+        Math := Object clone.
+        Math setSlot "fib" [n|
+            (n == 0) ifTrue [ return 0. ].
+            (n == 1) ifTrue [ return 1. ].
+            (Math fib ( n - 2 ) ) + (Math fib (n - 1 ) ).
+        ].
+        Math fib 6.
+     ] invoke . `,scope,NumObj(8))
+})
