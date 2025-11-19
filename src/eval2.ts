@@ -97,6 +97,15 @@ class Obj {
         // d.p("this is",this)
         return this.slots.get(name)
     }
+    _get_js_number():number {
+        return this.get_js_slot('jsvalue') as number
+    }
+    _get_js_string():string {
+        return this.get_js_slot('jsvalue') as string
+    }
+    _get_js_boolean():boolean {
+        return this.get_js_slot('jsvalue') as boolean
+    }
 
     clone() {
         return new Obj(this.name + "(COPY)", this.parent, this.getSlots())
@@ -112,7 +121,7 @@ class Obj {
 
     dump() {
         if (this.name === 'NumberLiteral') {
-            d.p("numberLiteral: " + this.get_js_slot('value'))
+            d.p("numberLiteral: " + this._get_js_number())
             return;
         }
         d.p(this.name)
@@ -120,8 +129,8 @@ class Obj {
         for(let key of this.slots.keys()) {
             let value = this.slots.get(key)
             if (value instanceof Obj) {
-                if (value.has_slot('value')) {
-                    d.p("slot " + key, value.name, value.get_js_slot('value') + "")
+                if (value.has_slot('jsvalue')) {
+                    d.p("slot " + key, value.name, value.get_js_slot('jsvalue') + "")
                 } else {
                     d.p("slot " + key, value.name + "")
                 }
@@ -148,7 +157,7 @@ const ROOT = new Obj("ROOT", null,{
     'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
         // d.p("inside make slot on",rec)
         // d.p('args are',args)
-        let slot_name = args[0].get_js_slot('value') as string;
+        let slot_name = args[0]._get_js_string()
         let slot_value = args[1]
         rec.make_slot(slot_name,slot_value)
         if (slot_value.name === 'Block') {
@@ -159,12 +168,12 @@ const ROOT = new Obj("ROOT", null,{
     },
     'getSlot':(rec:Obj, args:Array<Obj>):Obj => {
         // d.p("inside get slot")
-        let slot_name = args[0].get_js_slot('value') as string;
+        let slot_name = args[0]._get_js_string()
         return rec.get_slot(slot_name)
     },
     'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
         // d.p("inside set slot")
-        let slot_name = args[0].get_js_slot('value') as string;
+        let slot_name = args[0]._get_js_string()
         let slot_value = args[1]
         rec.set_slot(slot_name,slot_value)
         return NilObj()
@@ -185,21 +194,21 @@ const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
 const BooleanProto = new Obj("BooleanProto",ObjectProto,{
     'if_true':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec.get_js_slot('value') as boolean
+        let val = rec._get_js_boolean()
         if(val) return eval_block_obj(args[0])
         return NilObj()
     },
     'if_false':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec.get_js_slot('value') as boolean
+        let val = rec._get_js_boolean()
         if(!val) return eval_block_obj(args[0])
         return NilObj()
     },
     'cond':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec.get_js_slot('value') as boolean
+        let val = rec._get_js_boolean()
         return eval_block_obj(val?args[0]:args[1])
     }
 });
-const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'value':value})
+const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'jsvalue':value})
 
 const js_num_op = (cb:(a:number,b:number)=>number) => {
     return function (rec:Obj, args:Array<Obj>){
@@ -208,15 +217,15 @@ const js_num_op = (cb:(a:number,b:number)=>number) => {
         if (args[0].name !== "NumberLiteral") {
             throw new Error("cannot add a non number to a number")
         }
-        let a = rec.get_js_slot('value') as number
-        let b = args[0].get_js_slot('value') as number
+        let a = rec._get_js_number()
+        let b = args[0]._get_js_number()
         return NumObj(cb(a, b))
     }
 }
 const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
     return function (rec:Obj, args:Array<Obj>){
-        let a = rec.get_js_slot('value') as number
-        let b = args[0].get_js_slot('value') as number
+        let a = rec._get_js_number()
+        let b = args[0]._get_js_number()
         return BoolObj(cb(a, b))
     }
 }
@@ -228,22 +237,19 @@ const NumberProto = new Obj("NumberProto",ObjectProto,{
     '<':js_bool_op((a,b)=>a<b),
     '>':js_bool_op((a,b)=>a>b),
     '==':js_bool_op((a,b)=>a==b),
-    'sqrt':(rec:Obj):Obj => {
-        let a = rec.get_js_slot('value') as number
-        return NumObj(Math.sqrt(a))
-    }
+    'sqrt':(rec:Obj):Obj => NumObj(Math.sqrt(rec._get_js_number()))
 });
-const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'value': value})
+const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, {'jsvalue': value})
 
 
 const StringProto = new Obj("StringProto",ObjectProto,{
     '+':((rec:Obj, args:Array<Obj>) => {
-        let a = rec.get_js_slot('value') as string;
-        let b = args[0].get_js_slot('value') as string;
+        let a = rec._get_js_string()
+        let b = args[0]._get_js_string()
         return StrObj(a+b)
     })
 });
-const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'value': value})
+const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'jsvalue': value})
 
 const DebugProto = new Obj("DebugProto",ObjectProto,{
     'equals':(rec:Obj, args:Array<Obj>) => {
@@ -257,7 +263,7 @@ const DebugProto = new Obj("DebugProto",ObjectProto,{
         return NilObj()
     }
 })
-const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'value':value})
+const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'jsvalue':value})
 const BlockProto = new Obj("BlockProto",ObjectProto,{
     'invoke':(rec:Obj,args:Array<Obj>) => {
         // d.p("this is a block invocation")
@@ -315,8 +321,8 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         d.p(rec)
         d.p("in the scope",scope)
         if (rec.name === 'SymbolReference') {
-            d.p("returning " + " " + rec.get_slot('value') as string)
-            return scope.lookup_slot(rec.get_js_slot('value') as string)
+            d.p("returning " + " " + rec._get_js_string())
+            return scope.lookup_slot(rec._get_js_string())
         }
         return rec
     }
@@ -324,13 +330,13 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     let rec = objs[0]
     d.p('receiver',rec.name)
     if (rec.name === 'SymbolReference') {
-        rec = scope.lookup_slot(rec.get_js_slot('value') as string)
+        rec = scope.lookup_slot(rec._get_js_string())
         d.p("better receiver is", rec)
     }
 
     let message = objs[1]
     d.p("message",objs[1])
-    let message_name = message.get_js_slot('value') as string
+    let message_name = message._get_js_string()
     d.p(`message name: '${message_name}' `)
     if (message_name === 'value') {
         return rec
@@ -346,7 +352,7 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     args = args.map((a:Obj) => {
         d.p("arg is",a);
         if (a.name === 'SymbolReference') {
-            let aa = scope.lookup_slot(a.get_js_slot('value') as string)
+            let aa = scope.lookup_slot(a._get_js_string())
             d.p("found a better value",aa)
             return aa
         }
