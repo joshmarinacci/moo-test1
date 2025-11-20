@@ -188,6 +188,28 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     let message = objs[1]
     let message_name = message._get_js_string()
     d.p(`message name: '${message_name}' `)
+
+    if(message_name === "::=") {
+        d.p("rewrite the message call to make a slot")
+        return send_message([
+            scope,
+            SymRef("makeSlot"),
+            StrObj(objs[0]._get_js_string()),
+            objs[2]
+        ],scope)
+    }
+
+    if(message_name === ":=") {
+        d.p("rewrite the message call to set a slot")
+        return send_message([
+            scope,
+            SymRef("setSlot"),
+            StrObj(objs[0]._get_js_string()),
+            objs[2]
+        ],scope)
+    }
+
+
     let method = rec.lookup_slot(message._get_js_string())
     d.p("got the method",method)
     if (isNil(method)) {
@@ -385,7 +407,7 @@ function objsEqual(a: Obj, b: Obj) {
 function cval(code:string, scope:Obj, expected:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
-    d.disable()
+    // d.disable()
     let ast = parseAst(code);
     d.p('ast is',ast)
     // d.p(ast)
@@ -618,23 +640,29 @@ test("global scope tests",() => {
         Foo bar.
     ] value .`,scope,StrObj("Foo"))
 })
-no_test('assignment operator', () => {
+test('assignment operator', () => {
     let scope = make_default_scope()
-    cval(`v := 5.`,scope,NumObj(5))
-    cval('v.',scope,NumObj(5))
     cval(`[
-        T := (Object clone).
-        T setSlot "v" 0.
-        T setSlot "sv" [ x |
-           super setSlot "v" x.
-           self v.
+        v ::= 5.
+        v.
+    ] value.`,scope,NumObj(5))
+    cval(`[
+        v ::= 5.
+        v := 6.
+        v.
+    ] value.`,scope,NumObj(6))
+    cval(`[
+        T ::= (Object clone).
+        T makeSlot "v" 44.
+        T makeSlot "gv" [
+            self v.
         ].
-        T setSlot "gv" [
-          self v.
+        T makeSlot "sv" [ vv |
+            v := vv.
         ].
         T sv 88.
         T gv.
-    ] invoke.`,scope,NumObj(88))
+    ] value.`,scope,NumObj(44))
 })
 no_test ('fib recursion',() => {
     let scope = make_default_scope()

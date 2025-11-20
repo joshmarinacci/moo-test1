@@ -202,7 +202,7 @@ export let StringLiteral = withProduction(
     Seq(QQ,ZeroOrMore(AnyNot(QQ)),QQ)
     ,(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 export let Operator = withProduction(
-    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(">"),Lit(":="),Lit("=="))
+    Or(Lit("+"),Lit("-"),Lit("*"),Lit("/"),Lit("<"),Lit(">"),Lit("::="),Lit(":="),Lit("=="))
     ,(res)=> Id(res.slice)) // operators are identifiers too
 export let RealExp = Lit("dummy")
 export let Exp = (input:InputStream) => RealExp(input)
