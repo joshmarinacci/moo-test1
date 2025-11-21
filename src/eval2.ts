@@ -25,6 +25,9 @@ class Obj {
     }
 
     make_slot(name: string, obj: Obj) {
+        if(!obj) {
+            throw new Error(`cannot make slot ${name}. value is null`)
+        }
         console.log(`make slot ${this.name}.${name} = ${obj.name}'`)
         this.slots.set(name,obj)
     }
@@ -55,11 +58,17 @@ class Obj {
         if (this.name === 'StringLiteral') {
             return `StringLiteral (${this._get_js_string()})`;
         }
+        if (this.name === 'SymbolReference') {
+            return `SymbolReference (${this._get_js_string()})`;
+        }
         if (this.name === 'BooleanLiteral') {
             return `BooleanLiteral (${this._get_js_boolean()})`;
         }
         if (this.name === 'NilLiteral') {
             return `Nil`
+        }
+        if (this.name === 'Block') {
+            return `Block ${this.get_slot('body')}`
         }
         let slots = Array.from(this.slots.keys()).map(key => {
             let val:unknown = this.slots.get(key)
@@ -216,17 +225,17 @@ function send_message(objs: Obj[], scope: Obj):Obj {
         return ret2;
     }
 
-    // d.p("sending message")
-    // d.p('receiver',rec.name)
+    d.p("sending message")
+    d.p('receiver',rec.print())
     if (rec.name === 'SymbolReference') {
         rec = scope.lookup_slot(rec._get_js_string())
-        // d.p("better receiver is", rec)
+        d.p("better receiver is", rec.print())
     }
 
 
     let message = objs[1]
     let message_name = message._get_js_string()
-    // d.p(`message name: '${message_name}' `)
+    d.p(`message name: '${message_name}' `)
 
     if(message_name === "::=") {
         d.p("rewrite the message call to make a slot")
@@ -250,12 +259,14 @@ function send_message(objs: Obj[], scope: Obj):Obj {
 
 
     let method = rec.lookup_slot(message._get_js_string())
-    // d.p("got the method",method)
+    if (method.print) {
+        d.p("got the method", method.print())
+    }
     if (isNil(method)) {
         throw new Error("method is nil!")
     }
     let args:Array<Obj> = objs.slice(2)
-    // d.p("args",args)
+    d.p("args",args)
 
     args = args.map((a:Obj) => {
         if (a.name === 'SymbolReference') {
@@ -427,6 +438,7 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
         let body = rec.get_js_slot('body') as Array<StmtAst>
         if(!Array.isArray(body)) throw new Error("block body isn't an array")
         let scope = new Obj(`block-activation-${++BLOCK_COUNT}`,rec,{})
+        console.log("inside of block body")
         for(let i=0; i<params.length; i++) {
             scope.make_slot(params[i].value,args[i])
         }
@@ -817,25 +829,28 @@ test('list class', () => {
 test('eval vector class',() => {
     let scope = make_default_scope()
     cval(`[
-        Vector ::= (ObjectBase clone).
+        Global makeSlot "Vector" (ObjectBase clone).
         Vector setObjectName "Vector".
-        Vector makeSlot "x" 2.
+        Vector makeSlot "x" 0.
         Vector makeSlot "y" 0.
         Vector makeSlot "z" 0.
-        Vector makeSlot "add" [
-            "pretending to add " print.
+        Vector makeSlot "make" [ xx yy zz |
+            self makeSlot "v" (Vector clone).
+            v setSlot "x" xx.
+            v setSlot "y" yy.
+            v setSlot "z" zz.
+            v.
         ].
-        Vector makeSlot "sx" [ xx |
-           ("setting x " + xx) print.
-           self setSlot "x" xx.
+        Vector makeSlot "add" [a |
+            xx ::= ((a x) + ( self x)).
+            yy ::= ((a y) + ( self y)).
+            zz ::= ((a z) + (self z)).
+            Vector make xx yy zz.
         ].
-        v ::= (Vector clone).
-        v sx 3.
-        v x.
-        
-        a ::= (Vector clone).
-        a sx 88.
-        a x.
-    ] value.`,scope,NumObj(88))
+        a ::= (Vector make 1 1 1).
+        b ::= (Vector make 6 7 8).
+        c ::= (a add b).
+        c z.
+    ] value.`,scope,NumObj(9))
 })
 
