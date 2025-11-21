@@ -1,6 +1,6 @@
 import test from "node:test";
 import {JoshLogger} from "./util.ts";
-import {parseAst} from "./parser.ts";
+import {parseBlockBody} from "./parser.ts";
 
 import {Ast, BlockAst, GroupAst, IdAst, NumAst, StmtAst, StrAst} from "./ast.ts"
 import assert from "node:assert";
@@ -42,9 +42,24 @@ class Obj {
             this.slots.set(slot_name, slot_value)
         }
     }
-    print(depth:number):string {
+    print():string {
+        return this.safe_print(5)
+    }
+    safe_print(depth:number):string {
         if (depth < 1) {
             return this.name
+        }
+        if (this.name === 'NumberLiteral') {
+            return `NumberLiteral (${this._get_js_number()})`;
+        }
+        if (this.name === 'StringLiteral') {
+            return `StringLiteral (${this._get_js_string()})`;
+        }
+        if (this.name === 'BooleanLiteral') {
+            return `BooleanLiteral (${this._get_js_boolean()})`;
+        }
+        if (this.name === 'NilLiteral') {
+            return `Nil`
         }
         let slots = Array.from(this.slots.keys()).map(key => {
             let val:unknown = this.slots.get(key)
@@ -52,7 +67,7 @@ class Obj {
                 if (val.name === 'Block') {
                     val = 'Block'
                 } else {
-                    val = val.print(depth - 1)
+                    val = val.safe_print(depth - 1)
                 }
             } else {
                 if (val instanceof Function) {
@@ -63,7 +78,7 @@ class Obj {
             }
             return key + ":" + val
         })
-        let parent = this.parent?this.parent.print(1):'nil'
+        let parent = this.parent?this.parent.safe_print(1):'nil'
         return `${this.name} {${slots.join('\n')}}\n ${parent} `
     }
     has_slot(name: string) {
@@ -421,14 +436,14 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
             if (!last) last = NilObj()
             if (last._is_return) {
                 let target:Obj = last.slots.get('target')
-                d.p("looking for fast return to", target?.parent_chain())
-                d.p("scope is", scope.parent_chain())
+                // d.p("looking for fast return to", target?.parent_chain())
+                // d.p("scope is", scope.parent_chain())
                 if (target === scope) {
-                    d.p("fast return found. returning",last.slots.get('value'))
+                    // d.p("fast return found. returning",last.slots.get('value'))
                     return last.slots.get('value') as Obj
                 }
                 if (target && target.parent === scope) {
-                    d.p("fast return through parent found. returning",last.slots.get('value'))
+                    // d.p("fast return through parent found. returning",last.slots.get('value'))
                     return last.slots.get('value') as Obj
                 }
                 return last
@@ -483,17 +498,21 @@ function cval(code:string, scope:Obj, expected?:Obj) {
     // d.disable()
     d.p('=========')
     d.p(`code is '${code}'`)
-    let ast = parseAst(code);
-    d.p('ast is',ast)
-    // d.p(ast)
-    let obj = eval_ast(ast,scope);
-    if (obj._is_return) obj = obj.get_slot('value') as Obj;
-    d.p("returned")
-    // obj.dump()
-    d.p(obj)
-    // assert.deepStrictEqual(obj,expected)
+    let body = parseBlockBody(code);
+    // d.p('ast is',body)
+    let last = NilObj()
+    if (Array.isArray(body)) {
+        for(let ast of body) {
+            last = eval_ast(ast,scope)
+            if (!last) last = NilObj()
+        }
+    } else {
+        last = eval_ast(body as Ast, scope);
+    }
+    if (last._is_return) last = last.get_slot('value') as Obj;
+    d.p("returned", last.print())
     if(expected) {
-        assert(objsEqual(obj, expected))
+        assert(objsEqual(last, expected))
     }
 }
 function make_default_scope():Obj {

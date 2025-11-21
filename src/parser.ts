@@ -216,8 +216,14 @@ export let BlockArgs = withProduction(
     Seq(ZeroOrMore(Seq(ws(Identifier))),ws(Lit("|"))),
     (res)=> res.production[0].flat()
 )
+export let BlockBody = withProduction(Seq(ZeroOrMore(Statement), ws(Optional(Exp)))
+    ,(res)=> {
+        return res.production[0].flat()
+    }
+);
+
 export let Block = withProduction(
-    Seq(Lit('['), Optional(BlockArgs), ZeroOrMore(Statement),ws(Optional(Exp)),Lit("]"))
+    Seq(Lit('['), Optional(BlockArgs), BlockBody, Lit("]"))
     ,(res) =>{
         if (!res.production[1] && res.production[2]) {
             return Blk([],res.production[2])
@@ -235,3 +241,7 @@ export function parseAst(source:string):Ast {
     return Statement(input).production
 }
 
+export function parseBlockBody(source:string):Ast {
+    let input = new InputStream(source.trim(),0);
+    return BlockBody(input).production
+}

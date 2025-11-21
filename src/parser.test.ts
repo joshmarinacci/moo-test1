@@ -13,7 +13,7 @@ import {
     RealExp,
     Group,
     Integer,
-    Block, Operator, Identifier, StringLiteral, WS, parseAst
+    Block, Operator, Identifier, StringLiteral, WS, parseAst, BlockBody, parseBlockBody, Exp
 } from "./parser.ts";
 import type {Rule} from "./parser.ts"
 import {Num, Blk, Str, Grp, Id, Stmt} from "./ast.ts"
@@ -129,6 +129,19 @@ test("parse statement",() => {
     assert.deepStrictEqual(produces("4 .",Statement),Stmt(Num(4)))
     assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
     assert.ok(match("foo bar .",Statement))
+    assert.ok(match("foo bar . foo bar.",BlockBody))
+    assert.deepStrictEqual(produces("4 add 5 . 6 add 7 .",BlockBody),
+        [
+            Stmt(Num(4),Id("add"),Num(5)),
+            Stmt(Num(6),Id("add"),Num(7),)
+        ])
+})
+test("parse block body", () => {
+    assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
+        [
+            Stmt(Num(4),Id("add"),Num(5)),
+            Stmt(Num(6),Id("add"),Num(7),)
+        ])
 })
 test("block",() => {
     assert.ok(match("[]",Block))
