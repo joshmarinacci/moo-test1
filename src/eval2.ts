@@ -445,17 +445,17 @@ function objsEqual(a: Obj, b: Obj) {
 }
 
 function cval(code:string, scope:Obj, expected:Obj) {
+    d.disable()
     d.p('=========')
     d.p(`code is '${code}'`)
-    // d.disable()
     let ast = parseAst(code);
     d.p('ast is',ast)
     // d.p(ast)
     let obj = eval_ast(ast,scope);
     if (obj._is_return) obj = obj.get_slot('value') as Obj;
-    // d.p("returned")
+    d.p("returned")
     // obj.dump()
-    // d.p(obj)
+    d.p(obj)
     // assert.deepStrictEqual(obj,expected)
     assert(objsEqual(obj,expected))
 }
@@ -705,17 +705,17 @@ test('assignment operator', () => {
         T gv.
     ] value.`,scope,NumObj(44))
 })
-no_test ('fib recursion',() => {
+test ('fib recursion',() => {
     let scope = make_default_scope()
     cval(`[
-        Math := Object clone.
-        Math setSlot "fib" [n|
-            (n == 0) ifTrue [ return 0. ].
-            (n == 1) ifTrue [ return 1. ].
+        Math ::= Object clone.
+        Math makeSlot "fib" [n|
+            (n == 0) if_true [ return 0. ].
+            (n == 1) if_true [ return 1. ].
             (Math fib ( n - 2 ) ) + (Math fib (n - 1 ) ).
         ].
         Math fib 6.
-     ] invoke . `,scope,NumObj(8))
+     ] value . `,scope,NumObj(8))
 })
 
 test('non local return', () => {
