@@ -1,5 +1,7 @@
 import {Bitmap, encodePNGToStream, make} from "pureimage"
 import * as fs from "node:fs";
+import test from "node:test";
+import assert from "node:assert";
 
 type Vec = {
     x: number,
@@ -162,6 +164,10 @@ class Vector {
         let d = Vector.scale(normal, Vector.dotProduct(a,normal))
         return Vector.subtract(Vector.scale(d,2),a)
     }
+
+    static make(x: number, y: number, z: number) {
+        return {x,y,z}
+    }
 }
 
 function color_to_char(color:Vec) {
@@ -304,6 +310,16 @@ function isLightVisible(pt:Vec, scene:Scene, light:Vec) {
 }
 
 
-render(scene);
+// render(scene);
 
-encodePNGToStream(data,fs.createWriteStream('out.png')).then(() => console.log("done writing to 'out.png'"))
+// encodePNGToStream(data,fs.createWriteStream('out.png')).then(() => console.log("done writing to 'out.png'"))
+
+
+test('vector tests',() => {
+    let a = Vector.make(1,1,1);
+    let b = Vector.make(6,7,8);
+    assert.deepStrictEqual(Vector.dotProduct(a,b),21)
+    assert.deepStrictEqual(Vector.add(a,b), Vector.make(7,8,9));
+    assert.deepStrictEqual(Vector.subtract(a,b), Vector.make(-5,-6,-7));
+    assert.deepStrictEqual(Vector.crossProduct(a,b), Vector.make(1,-2,1));
+})

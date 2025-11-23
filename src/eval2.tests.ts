@@ -166,7 +166,7 @@ test('Point class',() => {
             pp.
         ].
 
-        self makeSlot "pt" (Point make 5 5).
+        pt ::= (Point make 5 5).
         Debug equals (pt x) 5.
         Debug equals (pt y) 5.
         pt magnitude.
