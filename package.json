@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test-eval": "node src/eval.ts",
-    "test-eval2": "node src/eval2.ts",
+    "test-eval2": "node src/eval2.tests.ts",
     "test-parser": "node src/parser.test.ts",
     "test-raytracer": "node src/raytracer.ts",
     "test": "npm run test-eval2 && npm run test-parser"
