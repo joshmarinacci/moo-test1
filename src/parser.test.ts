@@ -13,7 +13,7 @@ import {
     RealExp,
     Group,
     Integer,
-    Block, Operator, Identifier, StringLiteral, WS, parseAst, BlockBody, parseBlockBody, Exp
+    Block, Operator, Identifier, StringLiteral, WS, parseAst, BlockBody, parseBlockBody, Exp, AnyNot, Comment
 } from "./parser.ts";
 import type {Rule} from "./parser.ts"
 import {Num, Blk, Str, Grp, Id, Stmt} from "./ast.ts"
@@ -52,6 +52,7 @@ test ("test parser itself", () => {
     assert.ok(match("ab",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
     assert.ok(match("b",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
     assert.ok(!match("a",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+    assert.ok(match("baaac", Seq(Lit('b'),ZeroOrMore(AnyNot(Lit('c'))),Lit('c'))))
 })
 test("parse integer",() => {
     assert.ok(match("4",Digit))
@@ -164,5 +165,24 @@ test('parse expression',() => {
     assert.deepStrictEqual(parseAst("(add)."),Stmt(Grp(Id("add"))))
     assert.deepStrictEqual(parseAst("(4 + 5)."),Stmt(Grp(Num(4),Id("+"),Num(5))))
     assert.deepStrictEqual(parseAst("[foo.]."),Stmt(Blk([],[Stmt(Id("foo"))])))
+})
+test('parse comments',() => {
+    assert.ok(match('//foo\n',Comment))
+    // assert.ok(!match('//foo',Comment))
+    assert.ok(!match('a//foo\n',Comment))
+    assert.ok(!match('a//foo',Comment))
+
+    assert.deepStrictEqual(parseBlockBody("4 add 5."),[
+        Stmt(Num(4),Id('add'),Num(5)),
+    ])
+    assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
+        Stmt(Num(4),Id('add'),Num(5)),
+    ])
+    assert.deepStrictEqual(parseBlockBody("4 //\n add 5."),[
+        Stmt(Num(4),Id('add'),Num(5)),
+    ])
+    assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
+        Stmt(Num(4),Id('add'),Num(5)),
+    ])
 })
 

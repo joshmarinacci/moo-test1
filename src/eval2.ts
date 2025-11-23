@@ -842,10 +842,10 @@ test('eval vector class',() => {
             v.
         ].
         Vector makeSlot "add" [a |
-            xx ::= ((a x) + ( self x)).
-            yy ::= ((a y) + ( self y)).
-            zz ::= ((a z) + (self z)).
-            Vector make xx yy zz.
+          Vector make 
+                ((a x) + (self x))
+                ((a y) + (self y))
+                ((a z) + (self z)).
         ].
         a ::= (Vector make 1 1 1).
         b ::= (Vector make 6 7 8).

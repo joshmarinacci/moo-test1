@@ -172,8 +172,9 @@ export function withProduction(rule:Rule, cb:(pass:ParseResult)=>unknown):Rule {
     }
 }
 
+export let Comment = Seq(Lit('//'),ZeroOrMore(AnyNot(Lit('\n'))),Lit('\n'))
 export let WS = withProduction(
-    Optional(OneOrMore(Or(Lit(" "),Lit("\n"))))
+    Optional(OneOrMore(Or(Comment,Lit(" "),Lit("\n"))))
     ,(res) => undefined) // remove all whitespace from the tree
 
 function ws(rule:Rule) {
