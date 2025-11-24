@@ -333,3 +333,63 @@ test('fizzbuzz',() => {
     88. 
     ] value .`,scope,NumObj(88))
 })
+test('JS style function calls ',() => {
+    let scope = make_default_scope()
+    // a.x => (a x)
+    // a.x + 5 => (a x) + 5
+    // a.do => (a do)
+    // a.do 5 => (a do) 5
+/*
+    This won't work because a do has to resolve by itself before getting it's argument.
+    options:
+
+    * a.do resolves to a new CompId AST instead of Grp(Id,Id)
+        the eval function then needs to handle this differently then the regular
+        (receiver message args) message send.
+    * a.do resolves to Grp(Id,Id) and we don't resolve message calls inside of a group if they don't
+    have arguments. It should wait until it has at least one arg before executing. How do you know if it has an arg?
+    * no var args. methods declare how many args they want and the resolver complains if there aren't enough.
+    * we still need a way to cascade messages.
+
+
+    foo bar 5 should execute foo.bar(5)
+    then foo bar 5 baz 6 should execute foo.bar(5).baz(6).
+
+    So we could use the comma operator for cascading, so
+       foo bar 5, baz 6 would execute foo.bar(5).baz(6).
+
+    or we can just use parens to delimit method calls. You always need parens
+    and args must always be inside them.
+
+    Can we make this optional? use parens for clarification but you don't *have* to do it.
+
+    meth() is a method call
+    foo.meth() is a method call with the receiver foo
+    bar.foo.meth() is a method call with the receiver bar.foo
+
+    meth(a) is a method call with the argument a
+
+    foo.meth(a) is a method call on foo with the argument a
+
+    foo.meth(a).bar() is a method call on foo with the argument a, then a second method call bar on the return result of foo.
+
+
+
+ */
+    // cval(`
+    //     a ::= (Object clone).
+    //     a makeSlot "x" 55.
+    //     Debug equals (a x) 55.
+    //     Debug equals (a.x) 55.
+    //     Debug equals a.x 55.
+    //
+    //     a makeSlot "do" [xx|
+    //         (self x) + xx.
+    //     ].
+    //
+    //     Debug equals (a do 1) 56.
+    //     Debug equals (a do 1) 56.
+    //
+    //     99.
+    // `,scope,NumObj(99))
+})

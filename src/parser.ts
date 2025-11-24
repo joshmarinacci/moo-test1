@@ -1,4 +1,4 @@
-import type {Ast} from "./ast.ts";
+import {Ast, FunCallAst} from "./ast.ts";
 import {Blk, Grp, Id, Num, Stmt, Str} from "./ast.ts"
 
 export type Rule = (input:InputStream) => ParseResult;
@@ -183,10 +183,17 @@ function ws(rule:Rule) {
     })
 }
 
+const is_odd = (a:unknown,n:number) => (n%2 !==0)
+const is_not_undefined = (a:unknown) => typeof a !== 'undefined'
+
 export function ListOf (rule:Rule, separator:Rule) {
     return withProduction(
         Seq(Optional(rule),ZeroOrMore(Seq(separator,rule)))
-        ,(res) => res.production.flat(2).filter(l => l !== ','));
+        ,(res) => {
+            return res.production.flat(2)
+                .filter(is_odd)
+                .filter(is_not_undefined)
+        });
 }
 
 export let Digit = Range("0","9");
@@ -208,6 +215,18 @@ export let Operator = withProduction(
     ,(res)=> Id(res.slice)) // operators are identifiers too
 export let RealExp = Lit("dummy")
 export let Exp = (input:InputStream) => RealExp(input)
+export let FunctionCall = withProduction(
+    Seq(
+        ListOf(Identifier,Lit('.')),
+        Lit('('),
+        ListOf(Exp,Lit(",")),
+        Lit(')'))
+    ,(res) => {
+        console.log("function call",res)
+        console.log("selecgtor", res.production[0])
+        console.log("args",res.production[2])
+        return new FunCallAst(res.production[0],res.production[2])
+    });
 export let Group = withProduction(
     Seq(ws(Lit('(')),ZeroOrMore(Seq(ws(Exp))),ws(Lit(')')))
     ,(res)=> Grp(...(res.production[1].flat())))

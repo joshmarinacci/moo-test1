@@ -5,7 +5,8 @@ It uses prototypes (like Self), with single inheritance and has no
 classes. To create a new class like thing (a prototype) clone an existing one.
 
 Method calls are message sends with an arbitrary number of arguments, so you need
-to use statements (ending with '.') to separate method calls.
+to use statements (ending with '.') to separate method calls. Message names (selectors)
+must be a single word. Keyword style selectors (`at:do:`) are not supported.
 
 
 This creates a Point prototype:
@@ -58,3 +59,17 @@ self makeSlot "pt3" (pt + pt2).
 pt3 dump.
 pt3 print.
 ```
+
+
+# Syntax
+
+* **numbers**: only integers. `-1234`
+* **strings**: double quotes. `"foo"`
+* **comments**: double slash to the end of line `// a comment`
+* **booleans**: `true` and `false` are global instances of the built in `BooleanObject`. operators: `or` and `and`. messages: `if_true`, `if_false`, 
+ and `cond`.  
+
+To make the code cleaner, we add the dot, `.` operator for object field resolution, so instead of `4 + (self x)` you
+can type `4 + self.x`.
+
+a.b => (a b)

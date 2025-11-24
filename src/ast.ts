@@ -43,6 +43,18 @@ export class BlockAst extends Ast {
         return "[ " + this.args.map(s => s.toString()).join(" ") + " | " + this.body.map(s => s.toString()).join(" ") + " ]"
     }
 }
+export class FunCallAst extends Ast {
+    args: Ast[]
+    selector:Ast[]
+
+    constructor(selector:Ast[], args:Ast[]) {
+        super();
+        this.type = 'function-call'
+        this.selector = selector
+        this.args = args
+    }
+
+}
 export class NumAst extends Ast {
     value: number
     type: 'num'
@@ -87,3 +99,6 @@ export const Id = (value: string) => new IdAst(value)
 export const Stmt = (...args: Ast[]) => new StmtAst(args)
 export const Grp = (...args: Ast[]) => new GroupAst(args)
 export const Blk = (args:Ast[], body: Ast[]) => new BlockAst(args,body)
+export const FunCall = (sel:Ast[],args:Ast[]) => {
+    return new FunCallAst(sel,args)
+}

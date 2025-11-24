@@ -188,4 +188,14 @@ test('parse comments',() => {
         Stmt(Num(4),Id('add'),Num(5)),
     ])
 })
-
+// test('parse JS method call syntax', () => {
+//     // assert.ok(match("a",Identifier))
+//     // assert.deepStrictEqual(produces("a",Exp),Id('a'))
+//     assert.deepStrictEqual(produces("a()",FunctionCall),FunCall([Id('a')],[]))
+//     assert.deepStrictEqual(produces("a(5)",FunctionCall),FunCall([Id('a')],[Num(5)]))
+//     assert.deepStrictEqual(produces("a(5,6)",FunctionCall),FunCall([Id('a')],[Num(5),Num(6)]))
+//     assert.deepStrictEqual(produces("a.b(5)",FunctionCall),FunCall([Id('a'),Id('b')],[Num(5)]))
+//     assert.deepStrictEqual(produces("a.b(5,6)",FunctionCall),FunCall([Id('a'),Id('b')],[Num(5),Num(6)]))
+//     assert.deepStrictEqual(produces("b(5).c()",Exp),FunCall([FunCall([Id('b')],[Num(5)]),Id('c')],[]));
+//     // assert.deepStrictEqual(produces("b(5).c(6)",Exp),FunCall(FunCall(Id('nil'),'b',[]),'c',[Num(6)]));
+// })
