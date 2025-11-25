@@ -91,9 +91,22 @@ export class IdAst extends Ast {
         return "@" + this.value
     }
 }
+export class ArrayLiteralAst extends Ast {
+    value:Array<Ast>
+    type:string
+    constructor(value:Array<Ast>) {
+        super();
+        this.type = 'array-literal'
+        this.value = value
+    }
+    toString() {
+        return "{" + this.value.join(',') +'}'
+    }
+}
 
 
 export const Num = (value: number) => new NumAst(value)
+export const ArrayLit = (...args:Array<Ast>) => new ArrayLiteralAst(args)
 export const Str = (value: string) => new StrAst(value)
 export const Id = (value: string) => new IdAst(value)
 export const Stmt = (...args: Ast[]) => new StmtAst(args)

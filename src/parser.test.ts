@@ -17,10 +17,10 @@ import {
     StringLiteral,
     WS, parseAst, BlockBody, parseBlockBody, Exp, AnyNot,
     Comment,
-    NumberLiteral
+    NumberLiteral, ArrayLiteral
 } from "./parser.ts";
 import type {Rule} from "./parser.ts"
-import {Num, Blk, Str, Grp, Id, Stmt} from "./ast.ts"
+import {Num, Blk, Str, Grp, Id, Stmt, ArrayLit} from "./ast.ts"
 
 function match(source:string, rule:Rule) {
     // console.log("=======")
@@ -123,6 +123,21 @@ test("parse operators",() => {
     assert.deepStrictEqual(produces("-=",Operator),Id("-="))
     assert.deepStrictEqual(produces(":=",Operator),Id(":="))
     assert.deepStrictEqual(produces("::=",Operator),Id("::="))
+})
+test("parse array literals",() => {
+    assert.ok(match("{}",ArrayLiteral))
+    assert.deepStrictEqual(produces("{}",ArrayLiteral),ArrayLit())
+    assert.ok(match("{1}",ArrayLiteral))
+    assert.deepStrictEqual(produces("{1}",ArrayLiteral),ArrayLit(Num(1)))
+    assert.ok(match("{ 1 }",ArrayLiteral))
+    assert.ok(match("{ }",ArrayLiteral))
+    assert.ok(match("{ 4 }",ArrayLiteral))
+    assert.ok(match("{ 4 5 }",ArrayLiteral))
+    assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ArrayLit(Num(4),Num(5)))
+    assert.ok(match("{ 4, 5 }",ArrayLiteral))
+    assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ArrayLit(Num(4),Num(5)))
+    assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
+    assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ArrayLit(Num(4),Num(5),Num(6)))
 })
 
 test("handle whitespace",() => {
