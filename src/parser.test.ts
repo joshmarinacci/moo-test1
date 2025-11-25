@@ -13,7 +13,8 @@ import {
     RealExp,
     Group,
     Integer,
-    Block, Operator, Identifier, StringLiteral, WS, parseAst, BlockBody, parseBlockBody, Exp, AnyNot, Comment
+    Block, Operator, Identifier, StringLiteral, WS, parseAst, BlockBody, parseBlockBody, Exp, AnyNot, Comment, Float,
+    Binary, Hex
 } from "./parser.ts";
 import type {Rule} from "./parser.ts"
 import {Num, Blk, Str, Grp, Id, Stmt} from "./ast.ts"
@@ -67,6 +68,20 @@ test("parse integer",() => {
     assert.deepStrictEqual(produces("-44",Integer),Num(-44))
     assert.deepStrictEqual(produces("67",Integer),Num(67))
     assert.deepStrictEqual(produces("6_7",Integer),Num(67))
+})
+test("parse float", () => {
+    assert.deepStrictEqual(produces("-44.44",Float),Num(-44.44))
+    assert.deepStrictEqual(produces("0.44",Float),Num(0.44))
+    assert.deepStrictEqual(produces("0.4_4",Float),Num(0.44))
+    assert.deepStrictEqual(produces("0_0.44",Float),Num(0.44))
+})
+test('parse alt base numbers',() => {
+    assert.deepStrictEqual(produces("2r0001",Binary),Num(1))
+    assert.deepStrictEqual(produces("2r1111",Binary),Num(15))
+    assert.deepStrictEqual(produces("16r8",Hex),Num(8))
+    assert.deepStrictEqual(produces("16rA",Hex),Num(10))
+    assert.deepStrictEqual(produces("16rFF",Hex),Num(255))
+    // assert.deepStrictEqual(produces("16rFFFF",Hexidecimal),Num(0xFFFF))
 })
 test("parse identifier",() => {
     assert.ok(match("abc",Identifier))

@@ -205,10 +205,32 @@ const Colon = Lit(':')
 const Plus = Lit("+")
 const Minus = Lit("-")
 const Sign = Or(Plus,Minus)
+const Period = Lit(".")
 
+const Whole = Seq(Digit,ZeroOrMore(Or(Digit,Under)))
 export let Integer = produce(
-    Seq(Optional(Sign),Digit,ZeroOrMore(Or(Digit,Under)))
+    Seq(Optional(Sign),Whole)
     ,(res) => Num(parseInt(res.slice.replace('_', ''))))
+export const Float = produce(
+    Seq(Optional(Sign),Whole,Period,Whole)
+,(res)=> Num(parseFloat(res.slice.replace('_', ''))))
+
+const Digit2 = Range("0","1")
+export const Binary = produce(
+    Seq(Lit("2r"),OneOrMore(Digit2)),
+    (res) => {
+        let digits = res.slice.substring(2)
+        return Num(parseInt(digits,2))
+    }
+)
+const Digit16 = Or(Range("0","9"),Range("a","f"),Range("A","F"))
+export const Hex = produce(
+    Seq(Lit("16r"),OneOrMore(Digit16)),
+    (res) => {
+        let digits = res.slice.substring(3)
+        return Num(parseInt(digits,16))
+    }
+)
 
 export let Identifier = produce(
     Seq(Letter,ZeroOrMore(Or(Letter,Digit,Under,Colon)))
