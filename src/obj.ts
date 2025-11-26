@@ -15,7 +15,7 @@ export class Obj {
     parent: Obj|null;
     slots: Map<string, Obj>;
     _is_return: boolean;
-    constructor(name: string, parent: Obj|null, props:Record<string,JSMethod>) {
+    constructor(name: string, parent: Obj|null, props:Record<string,unknown>) {
         this.name = name;
         this.parent = parent
         this.slots = new Map<string,Obj>
@@ -148,7 +148,7 @@ export class Obj {
     }
 
     clone() {
-        return new Obj(this.name + "(COPY)", this.parent, this.getSlots())
+        return new Obj(this.name, this.parent, this.getSlots())
     }
 
     private getSlots():Record<string, unknown> {
