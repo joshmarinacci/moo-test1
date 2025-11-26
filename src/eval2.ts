@@ -212,6 +212,11 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
     if (last._is_return) last = last.get_slot('value') as Obj;
     d.p("returned", last.print())
     if(expected) {
+        if(!objsEqual(last,expected)) {
+            console.log("not equal")
+            console.log(last)
+            console.log(expected)
+        }
         assert(objsEqual(last, expected))
     }
 }

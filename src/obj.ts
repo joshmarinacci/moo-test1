@@ -195,6 +195,12 @@ export class Obj {
     parent_chain() {
         return this.name + ', ' + this.parent?.name + "," + this.parent?.parent?.name
     }
+    to_string():string {
+        if (this._get_js_string()) {
+            return this._get_js_string()
+        }
+        return this.print()
+    }
 }
 
 export const ROOT = new Obj("ROOT", null,{
