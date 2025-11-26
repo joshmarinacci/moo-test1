@@ -275,45 +275,38 @@ export const Operator = produce(ws(OneOrMore(SymbolLiteral)) ,(res)=> Id(res.pro
 
 export let RealExp = Lit("dummy")
 export let Exp = (input:InputStream) => RealExp(input)
-export let FunctionCall = produce(
-    Seq(
-        ListOf(Identifier,Lit('.')),
-        Lit('('),
-        ListOf(Exp,Lit(",")),
-        Lit(')'))
-    ,(res) => {
-        console.log("function call",res)
-        console.log("selecgtor", res.production[0])
-        console.log("args",res.production[2])
-        return new FunCallAst(res.production[0],res.production[2])
-    });
 export let Group = produce(
     Seq(ws(Lit('(')),ZeroOrMore(Seq(ws(Exp))),ws(Lit(')')))
     ,(res)=> Grp(...(res.production[1].flat())))
+
 export let Statement = produce(
     Seq(OneOrMore(ws(Exp)),Lit("."))
     ,(res)=> Stmt(...(res.production[0])))
+
 export let BlockArgs = produce(
     Seq(ZeroOrMore(Seq(ws(Identifier))),ws(Lit("|"))),
     (res)=> res.production[0].flat()
 )
-export let BlockBody = produce(Seq(ZeroOrMore(Statement), ws(Optional(Exp)))
-    ,(res)=> {
-        return res.production[0].flat()
-    }
+
+export let BlockBody = produce(
+    Seq(ZeroOrMore(Statement), ws(Optional(Exp))),
+    (res)=> res.production[0].flat()
 );
 
 export let Block = produce(
-    Seq(Lit('['), Optional(BlockArgs), BlockBody, Lit("]"))
-    ,(res) =>{
+    Seq(Lit('['), Optional(BlockArgs), BlockBody, Lit("]")),
+    (res) => {
         if (!res.production[1] && res.production[2]) {
             return Blk([],res.production[2])
         }
         return Blk(res.production[1], res.production[2])
     })
-// fix the recursion
+
+const Return = Lit("^")
+
+// this fixes up the recursion
 RealExp = produce(
-    Or(ArrayLiteral, NumberLiteral,Identifier,Operator,StringLiteral,Group,Block)
+    Or(Return,ArrayLiteral, NumberLiteral,Identifier,Operator,StringLiteral,Group,Block)
     ,(res)=> res.production)
 
 

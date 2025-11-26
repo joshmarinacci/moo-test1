@@ -185,6 +185,9 @@ test("parse statement",() => {
             Stmt(Num(4),Id("add"),Num(5)),
             Stmt(Num(6),Id("add"),Num(7),)
         ])
+
+    assert.ok(match("return foo .",Statement))
+    assert.ok(match("^ foo .",Statement))
 })
 test("parse block body", () => {
     assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
