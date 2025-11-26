@@ -47,3 +47,9 @@ DictProto._make_js_slot("jsvalue",{})
 export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})
 
 
+export function setup_arrays(scope:Obj) {
+    scope.make_slot("List",ListProto)
+    scope.make_slot("Dict",DictProto)
+}
+
+

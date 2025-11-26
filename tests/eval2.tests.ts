@@ -1,14 +1,14 @@
 import test from "node:test";
-import {cval} from "./eval2.ts";
-import {make_default_scope} from "./base.ts";
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
-import {NumObj} from "./number.ts";
-import {BoolObj} from "./boolean.ts";
-import {StrObj} from "./string.ts";
+import {cval} from "../src/eval2.ts";
+import {make_standard_scope} from "../src/standard.ts";
+import {NilObj, Obj, ObjectProto} from "../src/obj.ts";
+import {NumObj} from "../src/number.ts";
+import {BoolObj} from "../src/boolean.ts";
+import {StrObj} from "../src/string.ts";
 
 
 test('scope tests',() => {
-    let scope:Obj = make_default_scope();
+    let scope:Obj = make_standard_scope();
     // evaluates a number literal
     cval(` 5 .`,scope,NumObj(5))
     // self is the scope itself
@@ -54,11 +54,11 @@ test('scope tests',() => {
     ] value .`,scope,NumObj(5))
 })
 test('nil',() => {
-    let scope:Obj = make_default_scope();
+    let scope:Obj = make_standard_scope();
     cval(`nil .`,scope, NilObj())
 })
 test('numbers',() => {
-    let scope:Obj = make_default_scope();
+    let scope:Obj = make_standard_scope();
     cval('4 .',scope,NumObj(4));
     cval('4 value .',scope,NumObj(4))
     cval('4 + 5.',scope,NumObj(9));
@@ -70,7 +70,7 @@ test('numbers',() => {
     cval('4 + (5 * 6).',scope,NumObj(34));
 })
 test('booleans',() => {
-    let scope:Obj = make_default_scope();
+    let scope:Obj = make_standard_scope();
     cval('true .',scope,BoolObj(true));
     cval('false .',scope,BoolObj(false));
     cval('4 < 5 .',scope,BoolObj(true));
@@ -79,12 +79,12 @@ test('booleans',() => {
     cval('4 == 5 .',scope,BoolObj(false));
 })
 test('strings',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval('"foo" .', scope,StrObj("foo"))
     cval('"foo" + "bar" .', scope,StrObj("foobar"))
 })
 test('conditions',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(` (4 < 5) if_true 88.`,scope,NumObj(88))
     cval(` (4 > 5) if_true 88.`,scope,NilObj())
     cval(` (4 < 5) if_false 88.`,scope,NilObj())
@@ -99,13 +99,13 @@ test('conditions',() => {
     cval(` (4 > 5) cond [88.] [89.].`,scope,NumObj(89))
 })
 test('Debug tests',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`Debug print 0.`,scope,NilObj())
     cval(`Debug equals 0 0.`,scope,NilObj())
     cval(`Debug print 0 0.`,scope,NilObj())
 })
 test("block arg tests",() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`
         self makeSlot "foo" [
             88.
@@ -140,7 +140,7 @@ test("block arg tests",() => {
     `,scope, NilObj())
 })
 test('Point class',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
 
     cval(`
         Global makeSlot "PointProto" (Object clone).
@@ -187,7 +187,7 @@ test('Point class',() => {
     )
 })
 test("global scope tests",() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         Global makeSlot "foo" (Object clone).
         foo makeSlot "x" 5.
@@ -213,7 +213,7 @@ test("global scope tests",() => {
     ] value .`,scope,StrObj("Foo"))
 })
 test('assignment operator', () => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         v ::= 5.
         v.
@@ -237,7 +237,7 @@ test('assignment operator', () => {
     ] value.`,scope,NumObj(88))
 })
 test ('fib recursion',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         Math ::= Object clone.
         Math makeSlot "fib" [n|
@@ -249,7 +249,7 @@ test ('fib recursion',() => {
      ] value . `,scope,NumObj(8))
 })
 test('non local return', () => {
-    let scope = make_default_scope();
+    let scope = make_standard_scope();
     cval(`[ 
         T ::= (Object clone).
         T makeSlot "nl" [ 
@@ -266,13 +266,13 @@ test('non local return', () => {
     ] value.`,scope,NumObj(2))
 })
 test('non local return 2', () => {
-    let scope = make_default_scope();
+    let scope = make_standard_scope();
     cval(`[
         return 4 + 5.
     ] value.`,scope,NumObj(9))
 })
 test('list class', () => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval('list ::= (List clone).',scope);
     cval(`[
         list push 7.
@@ -289,7 +289,7 @@ test('list class', () => {
     ] value.`,scope,NumObj(88))
 })
 test('eval vector class',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         Global makeSlot "Vector" (ObjectBase clone).
         Vector setObjectName "Vector".
@@ -324,7 +324,7 @@ test('eval vector class',() => {
     ] value.`,scope,NumObj(9))
 })
 test('fizzbuzz',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`
     [
     1 range 100 [ n |
@@ -340,7 +340,7 @@ test('fizzbuzz',() => {
     ] value .`,scope,NumObj(88))
 })
 test('JS style function calls ',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     // a.x => (a x)
     // a.x + 5 => (a x) + 5
     // a.do => (a do)

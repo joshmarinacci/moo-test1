@@ -1,17 +1,11 @@
 import test from "node:test";
-import {cval} from "./eval2.ts";
+import {cval} from "../src/eval2.ts";
 import assert from "node:assert";
-import {ArrayLiteral, InputStream, type Rule} from "./parser.ts";
-import {make_default_scope} from "./base.ts";
-import {DictObj, ListObj} from "./arrays.ts";
-import {NumObj} from "./number.ts";
-
-export function match(source:string, rule:Rule) {
-    let input = new InputStream(source,0);
-    return rule(input).succeeded()
-}
-
-const no_test = (name:string, cb:() => void) => {}
+import {ArrayLiteral} from "../src/parser.ts";
+import {make_standard_scope} from "../src/standard.ts";
+import {DictObj, ListObj} from "../src/arrays.ts";
+import {NumObj} from "../src/number.ts";
+import {match} from "./common.ts";
 
 
 test('parse array list literals',() => {
@@ -30,7 +24,7 @@ test('parse array dict literals',() => {
 })
 
 test('array literals',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         l ::= { 4 5 }.
         Debug equals (l at 0) 4.
@@ -43,7 +37,7 @@ test('array literals',() => {
 })
 
 test('dict literals', () => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         p ::= { x:5 }.
         p dump.
@@ -62,7 +56,7 @@ test('dict literals', () => {
 })
 
 test('dict api',() => {
-    let scope = make_default_scope()
+    let scope = make_standard_scope()
     cval(`[
         dict ::= (Dict clone).
         dict set "six" 6.

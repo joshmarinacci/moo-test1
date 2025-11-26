@@ -18,15 +18,11 @@ import {
     WS, parseAst, BlockBody, parseBlockBody, Exp, AnyNot,
     Comment,
     NumberLiteral, ArrayLiteral
-} from "./parser.ts";
-import type {Rule} from "./parser.ts"
-import {Num, Blk, Str, Grp, Id, Stmt, ListLit} from "./ast.ts"
+} from "../src/parser.ts";
+import type {Rule} from "../src/parser.ts"
+import {Num, Blk, Str, Grp, Id, Stmt, ListLit} from "../src/ast.ts"
+import {match} from "./common.ts";
 
-function match(source:string, rule:Rule) {
-    // console.log("=======")
-    let input = new InputStream(source,0);
-    return rule(input).succeeded()
-}
 function matchOutput(source:string, rule:Rule) {
     let input = new InputStream(source,0);
     return rule(input).slice
