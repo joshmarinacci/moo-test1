@@ -1,13 +1,16 @@
 import test from "node:test";
-import {cval, eval_block_obj, ListObj, make_default_scope, NilObj, NumObj, Obj, ObjectProto} from "./eval2.ts";
+import {cval, eval_block_obj} from "./eval2.ts";
 import {Bitmap, encodePNGToStream, make} from "pureimage"
 import * as fs from "node:fs";
+import {make_default_scope} from "./base.ts";
+import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {NumObj} from "./number.ts";
 
 function make_scope_with_image() {
     let scope = make_default_scope()
     const ImageProto = new Obj("ImageProto",ObjectProto,{
         'make:':(rec:Obj, args:Array<Obj>):Obj => {
-            console.log("make called")
+            // console.log("make called")
             let image = new Obj("Image",ImageProto,{});
             image.make_slot("width",args[0])
             image.make_slot("height",args[1])
@@ -20,7 +23,7 @@ function make_scope_with_image() {
             let filename = args[0]._get_js_string();
             console.log(`saving bitmap to ${filename}`)
             encodePNGToStream(bitmap,fs.createWriteStream(filename)).then(() => {
-                console.log("finished writing to stream")
+                console.log(`finished saving bitmap to ${filename}`)
             })
             return NilObj()
         },
@@ -29,7 +32,6 @@ function make_scope_with_image() {
             let x = args[0]._get_js_number()
             let y = args[1]._get_js_number()
             let c = args[2]._get_js_number()
-            // console.log(`setting pixel at ${x},${y} `, 'c', c.toString(16))
             bitmap.setPixelRGBA(x,y,c)
             return NilObj()
         },

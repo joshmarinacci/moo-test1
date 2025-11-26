@@ -6,13 +6,12 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "test-eval": "node src/eval.ts",
     "test-eval2": "node src/eval2.tests.ts",
     "test-parser": "node src/parser.test.ts",
     "test-raytracer": "node src/raytracer.ts",
     "test-lists": "node src/arrayliterals.test.ts",
     "test-images": "node src/image.ts",
-    "test": "npm run test-eval2 && npm run test-parser"
+    "test": "npm run test-eval2 && npm run test-parser && npm run test-lists && npm run test-images"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

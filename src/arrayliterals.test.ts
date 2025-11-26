@@ -1,7 +1,10 @@
 import test from "node:test";
-import {cval, DictObj, ListObj, make_default_scope, NumObj} from "./eval2.ts";
+import {cval} from "./eval2.ts";
 import assert from "node:assert";
 import {ArrayLiteral, InputStream, type Rule} from "./parser.ts";
+import {make_default_scope} from "./base.ts";
+import {DictObj, ListObj} from "./arrays.ts";
+import {NumObj} from "./number.ts";
 
 export function match(source:string, rule:Rule) {
     let input = new InputStream(source,0);

@@ -3,197 +3,12 @@ import {parseBlockBody} from "./parser.ts";
 
 import {Ast, BlockAst, GroupAst, IdAst, ListLiteralAst, MapLiteralAst, NumAst, StmtAst, StrAst} from "./ast.ts"
 import assert from "node:assert";
+import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
+import {DictObj, ListObj} from "./arrays.ts";
+import {NumObj} from "./number.ts";
+import {StrObj} from "./string.ts";
 
 const d = new JoshLogger()
-
-type JSMethod = (rec:Obj, args:Array<Obj>) => Obj;
-
-export class Obj {
-    name: string;
-    parent: Obj|null;
-    slots: Map<string, Obj>;
-    _is_return: boolean;
-    constructor(name: string, parent: Obj|null, props:Record<string,JSMethod>) {
-        this.name = name;
-        this.parent = parent
-        this.slots = new Map<string,Obj>
-        this._is_return = false;
-        for(let key in props) {
-            this.slots.set(key,props[key])
-        }
-    }
-
-    make_slot(name: string, obj: Obj) {
-        if(!obj) {
-            throw new Error(`cannot make slot ${name}. value is null`)
-        }
-        // console.log(`make slot ${this.name}.${name} = ${obj.name}'`)
-        this.slots.set(name,obj)
-    }
-    _make_js_slot(name: string, value:unknown) {
-        this.slots.set(name,value)
-    }
-    set_slot(slot_name: string, slot_value: Obj):void {
-        // console.log(`set slot ${this.name}.${slot_name} = ${slot_value.name}`)
-        if(!this.slots.has(slot_name)) {
-            d.p(`${this.name} doesn't have the slot ${slot_name}`)
-            if(this.parent) {
-                return this.parent.set_slot(slot_name,slot_value)
-            }
-        } else {
-            this.slots.set(slot_name, slot_value)
-        }
-    }
-    print():string {
-        return this.safe_print(5)
-    }
-    safe_print(depth:number):string {
-        if (depth < 1) {
-            return this.name
-        }
-        if (this.name === 'NumberLiteral') {
-            return `NumberLiteral (${this._get_js_number()})`;
-        }
-        if (this.name === 'StringLiteral') {
-            return `StringLiteral (${this._get_js_string()})`;
-        }
-        if (this.name === 'SymbolReference') {
-            return `SymbolReference (${this._get_js_string()})`;
-        }
-        if (this.name === 'BooleanLiteral') {
-            return `BooleanLiteral (${this._get_js_boolean()})`;
-        }
-        if (this.name === 'NilLiteral') {
-            return `Nil`
-        }
-        if (this.name === 'Block') {
-            return `Block (${this.get_slot('args')}) ${this.get_slot('body')}`
-        }
-        let slots = Array.from(this.slots.keys()).map(key => {
-            let val:unknown = this.slots.get(key)
-            if (val instanceof Obj) {
-                if (val.name === 'Block') {
-                    val = 'Block'
-                } else {
-                    val = val.safe_print(depth - 1)
-                }
-            } else {
-                if (val instanceof Function) {
-                    val = "<function>"
-                } else {
-                    val = val.toString()
-                }
-            }
-            return key + ":" + val
-        })
-        let parent = this.parent?this.parent.safe_print(1):'nil'
-        return `${this.name} {${slots.join('\n')}}\n ${parent} `
-    }
-    has_slot(name: string) {
-        return this.slots.has(name)
-    }
-    get_slot(name: string):Obj {
-        return this.slots.get(name)
-    }
-
-    lookup_slot(name: string):Obj {
-        // d.p(`looking up name '${name}' on`, this.name)//,this.print(2))
-        if (name === 'self') {
-            return this
-        }
-        return this.safe_lookup_slot(name, 7);
-    }
-    safe_lookup_slot(name: string, depth: number): Obj {
-        // d.p("safe lookup slot",depth ,name,'on',this.name)
-        if(depth < 1) {
-            throw new Error("recursed too deep!")
-        }
-        if(this.slots.has(name)) {
-            // d.p(`has slot '${name}'`);
-            return this.slots.get(name)
-        }
-        if(this.parent) {
-            // d.p("calling the get parent lookup on", this.parent.name);
-            if (isNil(this.parent)) {
-                // d.p("parent is nil")
-            } else {
-                return this.parent.safe_lookup_slot(name, depth - 1)
-            }
-        }
-        // d.warn(`slot not found!: '${name}'`)
-        return NilObj()
-    }
-
-    get_js_slot(name: string):unknown {
-        // d.p("getting js slot",name)
-        // d.p("this is",this)
-        return this.slots.get(name)
-    }
-    _get_js_number():number {
-        return this.get_js_slot('jsvalue') as number
-    }
-    _get_js_string():string {
-        return this.get_js_slot('jsvalue') as string
-    }
-    _get_js_boolean():boolean {
-        return this.get_js_slot('jsvalue') as boolean
-    }
-    _get_js_array():Array<Obj> {
-        return this.get_js_slot('jsvalue') as Array<Obj>
-    }
-    _get_js_record():Record<string,Obj> {
-        return this.get_js_slot('jsvalue') as Record<string,Obj>
-    }
-
-    clone() {
-        return new Obj(this.name + "(COPY)", this.parent, this.getSlots())
-    }
-
-    private getSlots():Record<string, unknown> {
-        let slots:Record<string,unknown> = {}
-        for(let key of this.slots.keys()) {
-            slots[key] = this.slots.get(key)
-        }
-        return slots
-    }
-
-    dump() {
-        if (this.name === 'NumberLiteral') {
-            d.p("numberLiteral: " + this._get_js_number())
-            return;
-        }
-        d.p(this.name)
-        d.indent()
-        for(let key of this.slots.keys()) {
-            let value = this.slots.get(key)
-            if (value instanceof Obj) {
-                if (value.has_slot('jsvalue')) {
-                    d.p("slot " + key, value.name, value.get_js_slot('jsvalue') + "")
-                } else {
-                    d.p("slot " + key, value.name + "")
-                }
-            }
-            if (value instanceof Function) {
-                d.p("slot " + key + " native function")
-            }
-        }
-        if (this.name === 'ObjectProto') {
-            d.p("ending")
-        } else {
-            if(this.parent) {
-                d.p("parent")
-                d.indent()
-                this.parent.dump()
-                d.outdent()
-            }
-        }
-        d.outdent()
-    }
-
-    parent_chain() {
-        return this.name + ', ' + this.parent?.name + "," + this.parent?.parent?.name
-    }
-}
 
 export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') {
@@ -201,10 +16,6 @@ export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     }
     let meth = clause.get_js_slot('value') as Function
     return meth(clause,args)
-}
-function isNil(method: Obj) {
-    if(method.name === 'NilLiteral') return true;
-    return false;
 }
 function send_message(objs: Obj[], scope: Obj):Obj {
     if (objs.length < 1) {
@@ -342,115 +153,7 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
 }
 
 
-const ROOT = new Obj("ROOT", null,{
-    'makeSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        let slot_name = args[0]._get_js_string()
-        let slot_value = args[1]
-        rec.make_slot(slot_name,slot_value)
-        if (slot_value.name === 'Block') {
-            slot_value.parent = rec
-        }
-        return NilObj();
-    },
-    'getSlot':(rec:Obj, args:Array<Obj>):Obj => {
-        let slot_name = args[0]._get_js_string()
-        return rec.get_slot(slot_name)
-    },
-    'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
-        let slot_name = args[0]._get_js_string()
-        let slot_value = args[1]
-        rec.set_slot(slot_name,slot_value)
-        return NilObj()
-    },
-    'setObjectName':(rec:Obj, args:Array<Obj>):Obj => {
-        rec.name = args[0]._get_js_string()
-        return NilObj()
-    },
-    'clone':(rec:Obj):Obj => rec.clone(),
-    'dump':(rec:Obj):Obj => {
-        d.p("DUMPING: ", rec.name)
-        d.indent()
-        rec.dump();
-        d.outdent()
-        return NilObj()
-    }
-});
-export const ObjectProto = new Obj("ObjectProto", ROOT, {})
-const NilProto = new Obj("NilProto",ObjectProto,{});
-export const NilObj = () => new Obj("NilLiteral", NilProto, {})
-
-const BooleanProto = new Obj("BooleanProto",ObjectProto,{
-    'value':(rec:Obj) => rec,
-    'if_true':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec._get_js_boolean()
-        if(val) return eval_block_obj(args[0],[])
-        return NilObj()
-    },
-    'if_false':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec._get_js_boolean()
-        if(!val) return eval_block_obj(args[0],[])
-        return NilObj()
-    },
-    'and':(rec:Obj, args:Array<Obj>):Obj => {
-        let A = rec._get_js_boolean()
-        let B = args[0]._get_js_boolean()
-        return BoolObj(A && B)
-    },
-    'cond':(rec:Obj, args:Array<Obj>):Obj => {
-        let val = rec._get_js_boolean()
-        return eval_block_obj(val?args[0]:args[1],[])
-    }
-});
-export const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'jsvalue':value})
-
-const js_num_op = (cb:(a:number,b:number)=>number) => {
-    return function (rec:Obj, args:Array<Obj>){
-        if (args[0].name !== "NumberLiteral") {
-            throw new Error("cannot add a non number to a number")
-        }
-        let a = rec._get_js_number()
-        let b = args[0]._get_js_number()
-        return NumObj(cb(a, b))
-    }
-}
-const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
-    return function (rec:Obj, args:Array<Obj>){
-        return BoolObj(cb(rec._get_js_number(), args[0]._get_js_number()))
-    }
-}
-const NumberProto = new Obj("NumberProto",ObjectProto,{
-    'value':(rec:Obj) => rec,
-    '+':js_num_op((a,b)=>a+b),
-    '-':js_num_op((a,b)=>a-b),
-    '*':js_num_op((a,b)=>a*b),
-    '/':js_num_op((a,b)=>a/b),
-    '<':js_bool_op((a,b)=>a<b),
-    '>':js_bool_op((a,b)=>a>b),
-    '==':js_bool_op((a,b)=>a==b),
-    'mod':js_num_op((a,b)=>a%b),
-    'sqrt':(rec:Obj):Obj => NumObj(Math.sqrt(rec._get_js_number())),
-    'range':(rec:Obj, args:Array<Obj>):Obj => {
-        let start = rec._get_js_number()
-        let end = args[0]._get_js_number()
-        let block = args[1]
-        for(let i=start; i<end; i++) {
-            eval_block_obj(block, [NumObj(i)])
-        }
-    }
-});
-export const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, { 'jsvalue': value,})
-
-const StringProto = new Obj("StringProto",ObjectProto,{
-    'value':(rec:Obj) => rec,
-    '+':((rec:Obj, args:Array<Obj>) => StrObj(rec._get_js_string() + args[0]._get_js_string())),
-    'print':(rec:Obj):Obj => {
-        console.log("PRINT",rec._get_js_string())
-        return NilObj()
-    }
-});
-export const StrObj = (value:string):Obj => new Obj("StringLiteral", StringProto, {'jsvalue': value})
-
-const DebugProto = new Obj("DebugProto",ObjectProto,{
+export const DebugProto = new Obj("DebugProto",ObjectProto,{
     'equals':(rec:Obj, args:Array<Obj>) => {
         assert(objsEqual(args[0], args[1]),`not equal ${args[0].print()} ${args[1].print()}`)
         return NilObj()
@@ -500,52 +203,6 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
     }
 })
 
-const ListProto = new Obj("ListProto",ObjectProto, {
-    'push':(rec:Obj, args:Array<Obj>):Obj=>{
-        let arr = rec._get_js_array()
-        arr.push(args[0]);
-        return NilObj()
-    },
-    'at':(rec:Obj,args:Array<Obj>):Obj => {
-        let arr = rec._get_js_array()
-        let index = args[0]._get_js_number()
-        return arr[index]
-    },
-    'setAt':(rec:Obj, args:Array<Obj>):Obj => {
-        let arr = rec._get_js_array()
-        let index = args[0]._get_js_number()
-        arr[index] = args[1]
-        return rec
-    },
-    'len':(rec):Obj=>{
-        let arr = rec._get_js_array()
-        return NumObj(arr.length)
-    }
-})
-ListProto._make_js_slot('jsvalue',[])
-export const ListObj = (...args:Array<Obj>)=> new Obj("List", ListProto, {'jsvalue': args})
-
-const DictProto = new Obj('DictProto',ObjectProto, {
-    'get':(rec:Obj, args:Array<Obj>):Obj => {
-        let arr = rec._get_js_record()
-        let key = args[0]._get_js_string()
-        return arr[key]
-    },
-    'set':(rec:Obj, args:Array<Obj>):Obj => {
-        let arr = rec._get_js_record()
-        let key = args[0]._get_js_string()
-        arr[key] = args[1]
-        return rec
-    },
-    'len':(rec):Obj=>{
-        let record = rec._get_js_record()
-        return NumObj(Object.keys(record).length)
-    }
-})
-DictProto._make_js_slot("jsvalue",{})
-export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})
-
-
 function objsEqual(a: Obj, b: Obj) {
     if(a.name !== b.name) return false
     if(a.slots.size !== b.slots.size) return false
@@ -582,25 +239,6 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
     if(expected) {
         assert(objsEqual(last, expected))
     }
-}
-export function make_default_scope():Obj {
-    let scope = new Obj("Global",ROOT,{});
-    scope.make_slot("Object",ObjectProto)
-    scope.make_slot("Number",NumberProto)
-    scope.make_slot("Debug",DebugProto)
-    scope.make_slot("Boolean",BooleanProto)
-    scope.make_slot("true",BoolObj(true))
-    scope.make_slot("false",BoolObj(false))
-    scope.make_slot("Nil",NilProto)
-    scope.make_slot('nil',NilObj())
-    scope.make_slot("List",ListProto)
-    scope.make_slot("Dict",DictProto)
-    scope.make_slot("Global",scope)
-    ObjectProto.parent = scope;
-    return scope
-}
-const no_test = (name:string, cb:unknown) => {
-
 }
 
 

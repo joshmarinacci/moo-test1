@@ -1,5 +1,10 @@
 import test from "node:test";
-import {BoolObj, cval, make_default_scope, NilObj, NumObj, Obj, ObjectProto, StrObj} from "./eval2.ts";
+import {cval} from "./eval2.ts";
+import {make_default_scope} from "./base.ts";
+import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {NumObj} from "./number.ts";
+import {BoolObj} from "./boolean.ts";
+import {StrObj} from "./string.ts";
 
 
 test('scope tests',() => {
