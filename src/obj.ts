@@ -231,6 +231,11 @@ export const ROOT = new Obj("ROOT", null,{
     }
 });
 export const ObjectProto = new Obj("ObjectProto", ROOT, {})
-export const NilProto = new Obj("NilProto",ObjectProto,{});
+ const NilProto = new Obj("NilProto",ObjectProto,{});
 export const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
+export function setup_object(scope: Obj) {
+    scope.make_slot("Object", ObjectProto)
+    scope.make_slot("Nil", NilProto)
+    scope.make_slot('nil', NilObj())
+}

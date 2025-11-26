@@ -17,7 +17,7 @@ const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
         return BoolObj(cb(rec._get_js_number(), args[0]._get_js_number()))
     }
 }
-export const NumberProto = new Obj("NumberProto",ObjectProto,{
+const NumberProto = new Obj("NumberProto",ObjectProto,{
     'value':(rec:Obj) => rec,
     '+':js_num_op((a,b)=>a+b),
     '-':js_num_op((a,b)=>a-b),
@@ -39,3 +39,6 @@ export const NumberProto = new Obj("NumberProto",ObjectProto,{
 });
 export const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, { 'jsvalue': value,})
 
+export function setup_number(scope: Obj) {
+    scope.make_slot("Number", NumberProto)
+}

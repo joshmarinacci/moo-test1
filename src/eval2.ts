@@ -7,6 +7,7 @@ import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {DictObj, ListObj} from "./arrays.ts";
 import {NumObj} from "./number.ts";
 import {StrObj} from "./string.ts";
+import {objsEqual} from "./debug.ts";
 
 const d = new JoshLogger()
 
@@ -153,17 +154,6 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
 }
 
 
-export const DebugProto = new Obj("DebugProto",ObjectProto,{
-    'equals':(rec:Obj, args:Array<Obj>) => {
-        assert(objsEqual(args[0], args[1]),`not equal ${args[0].print()} ${args[1].print()}`)
-        return NilObj()
-    },
-    'print':(rec:Obj, args:Array<Obj>) => {
-        d.p("debug printing".toUpperCase())
-        d.p(args)
-        return NilObj()
-    }
-})
 const SymRef = (value:string):Obj => new Obj("SymbolReference",ObjectProto,{'jsvalue':value})
 let BLOCK_COUNT = 0
 const BlockProto = new Obj("BlockProto",ObjectProto,{
@@ -203,21 +193,6 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
     }
 })
 
-function objsEqual(a: Obj, b: Obj) {
-    if(a.name !== b.name) return false
-    if(a.slots.size !== b.slots.size) return false
-    for(let key of a.slots.keys()) {
-        let vala = a.slots.get(key) as unknown;
-        let valb = b.slots.get(key) as unknown;
-        if (typeof vala === 'number') {
-            if (vala !== valb) return false
-        }
-        if (typeof vala === 'string') {
-            if (vala !== valb) return false
-        }
-    }
-    return true
-}
 
 export function cval(code:string, scope:Obj, expected?:Obj) {
     d.disable()
