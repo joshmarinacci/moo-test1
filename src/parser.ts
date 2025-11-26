@@ -1,4 +1,4 @@
-import {ArrayLit, Ast, FunCallAst} from "./ast.ts";
+import {ListLit, Ast, FunCallAst, MapLit} from "./ast.ts";
 import {Blk, Grp, Id, Num, Stmt, Str} from "./ast.ts"
 
 export type Rule = (input:InputStream) => ParseResult;
@@ -238,13 +238,30 @@ const QStringLiteral = produce(Seq(Q,ZeroOrMore(AnyNot(Q)),Q),(res) => Str(res.s
 const QQStringLiteral = produce(Seq(QQ,ZeroOrMore(AnyNot(QQ)),QQ),(res) => Str(res.slice.substring(1, res.slice.length - 1)))
 export const StringLiteral = Or(QStringLiteral, QQStringLiteral)
 
+export let Identifier = produce(
+    Seq(Letter,ZeroOrMore(Or(Letter,Digit,Under,Colon))),
+    (res)=> Id(res.slice))
+
 const ArrayLiteralValue = produce(
     Seq(ws(NumberLiteral),Optional(Lit(","))),
     (res)=> res.production[0])
-export const ArrayLiteral = produce(
+const ArrayListBody = produce(
     Seq(Lit("{"),ws(ZeroOrMore(ArrayLiteralValue)),Lit("}")),
-    (res) => ArrayLit(...(res.production[1]))
+    (res) => ListLit(...res.production[1]))
+
+const PlainIdentifier = produce(
+    OneOrMore(Letter),
+    (res) => Id(res.slice)
 )
+const ArrayLiteralPair = produce(
+    Seq(ws(PlainIdentifier), Lit(":"), ws(NumberLiteral)),
+    (res) => [res.production[0], res.production[2]]
+)
+const ArrayMapBody = produce(
+    Seq(Lit("{"),OneOrMore(ArrayLiteralPair),Lit("}")),
+    (res) => MapLit(...res.production[1]))
+
+export const ArrayLiteral = Or(ArrayMapBody, ArrayListBody)
 
 
 const SymbolLiteral = Or(
@@ -252,10 +269,6 @@ const SymbolLiteral = Or(
     Lit("<"),Lit(">"),Lit(":"),Lit("="),Lit("!"))
 // operators are identifiers too
 export const Operator = produce(ws(OneOrMore(SymbolLiteral)) ,(res)=> Id(res.production.join("")))
-
-export let Identifier = produce(
-    Seq(Letter,ZeroOrMore(Or(Letter,Digit,Under,Colon)))
-    ,(res)=> Id(res.slice))
 
 export let RealExp = Lit("dummy")
 export let Exp = (input:InputStream) => RealExp(input)

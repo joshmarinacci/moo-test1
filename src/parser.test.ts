@@ -20,7 +20,7 @@ import {
     NumberLiteral, ArrayLiteral
 } from "./parser.ts";
 import type {Rule} from "./parser.ts"
-import {Num, Blk, Str, Grp, Id, Stmt, ArrayLit} from "./ast.ts"
+import {Num, Blk, Str, Grp, Id, Stmt, ListLit} from "./ast.ts"
 
 function match(source:string, rule:Rule) {
     // console.log("=======")
@@ -124,21 +124,29 @@ test("parse operators",() => {
     assert.deepStrictEqual(produces(":=",Operator),Id(":="))
     assert.deepStrictEqual(produces("::=",Operator),Id("::="))
 })
-test("parse array literals",() => {
+test("parse array list literals",() => {
     assert.ok(match("{}",ArrayLiteral))
-    assert.deepStrictEqual(produces("{}",ArrayLiteral),ArrayLit())
+    assert.deepStrictEqual(produces("{}",ArrayLiteral),ListLit())
     assert.ok(match("{1}",ArrayLiteral))
-    assert.deepStrictEqual(produces("{1}",ArrayLiteral),ArrayLit(Num(1)))
+    assert.deepStrictEqual(produces("{1}",ArrayLiteral),ListLit(Num(1)))
     assert.ok(match("{ 1 }",ArrayLiteral))
     assert.ok(match("{ }",ArrayLiteral))
     assert.ok(match("{ 4 }",ArrayLiteral))
     assert.ok(match("{ 4 5 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ArrayLit(Num(4),Num(5)))
+    assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
     assert.ok(match("{ 4, 5 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ArrayLit(Num(4),Num(5)))
+    assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
     assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ArrayLit(Num(4),Num(5),Num(6)))
-    assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ArrayLit(Num(4),Num(5),Num(6))))
+    assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ListLit(Num(4),Num(5),Num(6)))
+    assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ListLit(Num(4),Num(5),Num(6))))
+})
+
+test('parse array dict literals',() => {
+    assert.ok(match("{}",ArrayLiteral))
+    assert.ok(match("{a:5}",ArrayLiteral))
+    assert.ok(match("{ a:5 }",ArrayLiteral))
+    assert.ok(match("{ a:5 b:5 }",ArrayLiteral))
+    assert.ok(match("{ abc:5 def:8 }",ArrayLiteral))
 })
 
 test("handle whitespace",() => {

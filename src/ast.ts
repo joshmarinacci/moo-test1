@@ -91,7 +91,7 @@ export class IdAst extends Ast {
         return "@" + this.value
     }
 }
-export class ArrayLiteralAst extends Ast {
+export class ListLiteralAst extends Ast {
     value:Array<Ast>
     type:string
     constructor(value:Array<Ast>) {
@@ -103,10 +103,23 @@ export class ArrayLiteralAst extends Ast {
         return "{" + this.value.join(',') +'}'
     }
 }
+export class MapLiteralAst extends Ast {
+    value:Array<[string,Ast]>
+    type:string
+    constructor(value:Array<[string,Ast]>) {
+        super();
+        this.type = 'array-literal-map'
+        this.value = value
+    }
+    toString() {
+        return "{  " + this.value.join(',') + '}'
+    }
+}
 
 
 export const Num = (value: number) => new NumAst(value)
-export const ArrayLit = (...args:Array<Ast>) => new ArrayLiteralAst(args)
+export const ListLit = (...args:Array<Ast>) => new ListLiteralAst(args)
+export const MapLit = (...args:Array<[string,Ast]>) => new MapLiteralAst(args)
 export const Str = (value: string) => new StrAst(value)
 export const Id = (value: string) => new IdAst(value)
 export const Stmt = (...args: Ast[]) => new StmtAst(args)

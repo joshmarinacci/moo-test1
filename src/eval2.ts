@@ -2,7 +2,7 @@ import test from "node:test";
 import {JoshLogger} from "./util.ts";
 import {parseBlockBody} from "./parser.ts";
 
-import {ArrayLiteralAst, Ast, BlockAst, GroupAst, IdAst, NumAst, StmtAst, StrAst} from "./ast.ts"
+import {ListLiteralAst, Ast, BlockAst, GroupAst, IdAst, NumAst, StmtAst, StrAst, MapLiteralAst} from "./ast.ts"
 import assert from "node:assert";
 
 const d = new JoshLogger()
@@ -324,9 +324,21 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
         return blk2
     }
     if (ast.type === 'array-literal') {
-        let arr = ast as ArrayLiteralAst
-        let vals = arr.value.map(v => eval_ast(v,scope))
+        let list = ast as ListLiteralAst
+        let vals = list.value.map(v => eval_ast(v,scope))
         return ListObj(...vals)
+    }
+    if (ast.type === 'array-literal-map') {
+        let map = ast as MapLiteralAst
+        let obj:Record<string, Obj> = {}
+        map.value.forEach(pair => {
+            console.log('evaluating',pair)
+            let val = eval_ast(pair[1],scope)
+            obj[pair[0]] = val
+        })
+        let dict = DictObj(obj)
+        // dict.dump()
+        return dict
     }
     console.error("unknown ast type",ast)
     throw new Error(`unknown ast type ${ast.type}`)
@@ -534,6 +546,7 @@ const DictProto = new Obj('DictProto',ObjectProto, {
     }
 })
 DictProto._make_js_slot("jsvalue",{})
+export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})
 
 
 function objsEqual(a: Obj, b: Obj) {
