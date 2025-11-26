@@ -1,4 +1,4 @@
-import {ListLit, Ast, FunCallAst, MapLit} from "./ast.ts";
+import {ListLit, Ast, FunCallAst, MapLit, Ret} from "./ast.ts";
 import {Blk, Grp, Id, Num, Stmt, Str} from "./ast.ts"
 
 export type Rule = (input:InputStream) => ParseResult;
@@ -302,7 +302,7 @@ export let Block = produce(
         return Blk(res.production[1], res.production[2])
     })
 
-const Return = Lit("^")
+const Return = produce(Lit("^"),()=>Ret())
 
 // this fixes up the recursion
 RealExp = produce(

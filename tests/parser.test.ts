@@ -20,7 +20,7 @@ import {
     NumberLiteral, ArrayLiteral
 } from "../src/parser.ts";
 import type {Rule} from "../src/parser.ts"
-import {Num, Blk, Str, Grp, Id, Stmt, ListLit} from "../src/ast.ts"
+import {Num, Blk, Str, Grp, Id, Stmt, ListLit, Ret} from "../src/ast.ts"
 import {match} from "./common.ts";
 
 function matchOutput(source:string, rule:Rule) {
@@ -187,7 +187,8 @@ test("parse statement",() => {
         ])
 
     assert.ok(match("return foo .",Statement))
-    assert.ok(match("^ foo .",Statement))
+    assert.ok(match("^ 67 .",Statement))
+    assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
 })
 test("parse block body", () => {
     assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),

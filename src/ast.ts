@@ -118,6 +118,13 @@ export class MapLiteralAst extends Ast {
     }
 }
 
+export class RetAst extends Ast {
+    constructor() {
+        super();
+        this.type = 'return'
+    }
+}
+
 
 export const Num = (value: number) => new NumAst(value)
 export const ListLit = (...args:Array<Ast>) => new ListLiteralAst(args)
@@ -125,6 +132,7 @@ export const MapLit = (...args:Array<[string,Ast]>) => new MapLiteralAst(args)
 export const Str = (value: string) => new StrAst(value)
 export const Id = (value: string) => new IdAst(value)
 export const Stmt = (...args: Ast[]) => new StmtAst(args)
+export const Ret = () => new RetAst()
 export const Grp = (...args: Ast[]) => new GroupAst(args)
 export const Blk = (args:Ast[], body: Ast[]) => new BlockAst(args,body)
 export const FunCall = (sel:Ast[],args:Ast[]) => {

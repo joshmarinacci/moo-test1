@@ -271,6 +271,12 @@ test('non local return 2', () => {
         return 4 + 5.
     ] value.`,scope,NumObj(9))
 })
+test('non local return 3', () => {
+    let scope = make_standard_scope();
+    cval(`[
+        ^ 4 + 5.
+    ] value.`,scope,NumObj(9))
+})
 test('list class', () => {
     let scope = make_standard_scope()
     cval('list ::= (List clone).',scope);

@@ -109,6 +109,7 @@ function eval_ast(ast:Ast, scope:Obj):Obj {
     if (ast.type === 'num') return NumObj((ast as NumAst).value)
     if (ast.type === "str") return StrObj((ast as StrAst).value)
     if (ast.type === 'id') return SymRef((ast as IdAst).value)
+    if (ast.type === 'return') return SymRef("return")
     if (ast.type === 'group') {
         let group = ast as GroupAst;
         d.indent()
