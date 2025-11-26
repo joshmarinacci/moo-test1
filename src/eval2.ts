@@ -195,7 +195,7 @@ export class Obj {
     }
 }
 
-function eval_block_obj(clause: Obj, args:Array<Obj>) {
+export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') {
         return clause
     }

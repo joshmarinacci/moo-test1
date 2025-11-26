@@ -11,6 +11,7 @@
     "test-parser": "node src/parser.test.ts",
     "test-raytracer": "node src/raytracer.ts",
     "test-lists": "node src/arrayliterals.test.ts",
+    "test-images": "node src/image.ts",
     "test": "npm run test-eval2 && npm run test-parser"
   },
   "devDependencies": {
