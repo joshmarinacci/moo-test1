@@ -3,31 +3,15 @@ import {NumObj} from "./number.ts";
 import {eval_block_obj} from "./eval.ts";
 
 export const ListProto = new Obj("ListProto",ObjectProto, {
-    'push':(rec:Obj, args:Array<Obj>):Obj=>{
-        let arr = rec._get_js_array()
-        arr.push(args[0]);
-        return NilObj()
-    },
     'add:':(rec:Obj, args:Array<Obj>):Obj=>{
         let arr = rec._get_js_array()
         arr.push(args[0]);
         return NilObj()
     },
-    'at':(rec:Obj,args:Array<Obj>):Obj => {
-        let arr = rec._get_js_array()
-        let index = args[0]._get_js_number()
-        return arr[index]
-    },
     'at:':(rec:Obj,args:Array<Obj>):Obj => {
         let arr = rec._get_js_array()
         let index = args[0]._get_js_number()
         return arr[index]
-    },
-    'setAt':(rec:Obj, args:Array<Obj>):Obj => {
-        let arr = rec._get_js_array()
-        let index = args[0]._get_js_number()
-        arr[index] = args[1]
-        return rec
     },
     'setAt:':(rec:Obj, args:Array<Obj>):Obj => {
         let arr = rec._get_js_array()
@@ -35,11 +19,7 @@ export const ListProto = new Obj("ListProto",ObjectProto, {
         arr[index] = args[1]
         return rec
     },
-    'len':(rec):Obj=>{
-        let arr = rec._get_js_array()
-        return NumObj(arr.length)
-    },
-    'size':(rec):Obj=>{
+    'size':(rec:Obj, args:Array<Obj>):Obj=>{
         let arr = rec._get_js_array()
         return NumObj(arr.length)
     },

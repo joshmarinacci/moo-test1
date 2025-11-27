@@ -27,9 +27,9 @@ test('array literals',() => {
     let scope = make_standard_scope()
     cval(`[
         l ::= { 4 5 }.
-        Debug equals (l at 0) 4.
-        Debug equals (l at 1) 5.
-        l len.
+        Debug equals (l at: 0) 4.
+        Debug equals (l at: 1) 5.
+        l size.
      ] value.`, scope, NumObj(2))
     cval(`[
      { 4 5 }.
@@ -58,7 +58,7 @@ test('list api', () => {
     let scope = make_standard_scope()
     cval(`[
         l ::= (List clone).
-        Debug equals (l len) 0.
+        Debug equals (l size) 0.
         
         l add: 1.
         Debug equals (l size) 1.
