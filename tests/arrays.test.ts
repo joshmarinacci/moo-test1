@@ -40,15 +40,15 @@ test('dict literals', () => {
     let scope = make_standard_scope()
     cval(`[
         p ::= { x:5 }.
-        Debug equals (p get "x") 5.
+        Debug equals (p get: "x") 5.
         p.
     ] value.
     `,scope, DictObj({x:NumObj(5)}))
 
     cval(`[
         v ::= { x:5 y: 6 }.
-        Debug equals (v get "x") 5.
-        Debug equals (v get "y") 6.
+        Debug equals (v get: "x") 5.
+        Debug equals (v get: "y") 6.
         v.
     ] value.
     `,scope, DictObj({x:NumObj(5)}))
@@ -85,18 +85,66 @@ test('list api', () => {
         Debug equals (l2 size) 3.
         Debug equals (l2 at: 0) 2.
         Debug equals (l2 at: 1) 16.
-        88.
-    ] value.`,scope)
+        
+        67.
+    ] value.`,scope, NumObj(67))
 })
+
 test('dict api',() => {
     let scope = make_standard_scope()
     cval(`[
         dict ::= (Dict clone).
-        dict set "six" 6.
-        dict set "seven" 7.
-        Debug equals (dict get "six") 6.
-        Debug equals (dict get "seven") 7.
-        dict len.
+        dict set: "six" 6.
+        dict set: "seven" 7.
+        Debug equals (dict get: "six") 6.
+        Debug equals (dict get: "seven") 7.
+        dict size.
+
+        
+        keys ::= (dict keys).
+        Debug equals (keys size) 2.
+        Debug equals (keys at: 0) "six".        
+        Debug equals (keys at: 1) "seven".        
+
+        values ::= (dict values).        
+        Debug equals (values size) 2.
+        Debug equals (values at: 0) 6.
+        Debug equals (values at: 1) 7.
+        
+        values2 ::= ((dict values) collect: [n | n + 2.]).
+        Debug equals (values2 at: 0) 8.
+        Debug equals (values2 at: 1) 9.
+        
+        67.
         ] value.
-    `,scope,NumObj(2))
+    `,scope, NumObj(67))
+})
+
+test('set api',() => {
+    let scope = make_standard_scope()
+    cval(`[
+        set ::= (Set clone).
+        set add: 1.
+        Debug equals (set size) 1.
+
+        set add: 88.
+        Debug equals (set size) 2.
+
+        // duplicates don't increase the size        
+        set add: 88.
+        // Debug equals (set size) 2.
+        
+        A ::= (Set withAll: ({ 1 2 3 })).
+        B ::= (Set withAll: { 3 4 5 }).
+        C ::= (A - B).
+        // Debug equals (A size) 3.
+        // Debug equals (B size) 3.
+        // Debug equals (C size) 2.
+        
+        D ::= (A + B).
+        // Debug equals (D size) 5.
+        
+        67.
+        ] value.
+    `,scope, NumObj(67))
 })
