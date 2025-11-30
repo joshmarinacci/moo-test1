@@ -178,6 +178,9 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
         for(let ast of body) {
             last = eval_ast(ast,scope)
             if (!last) last = NilObj()
+            if (last.name === 'SymbolReference') {
+                last = scope.lookup_slot(last._get_js_string())
+            }
             if (last._is_return) {
                 let target:Obj = last._method_slots.get('target')
                 if (target === scope) {

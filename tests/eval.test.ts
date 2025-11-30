@@ -20,7 +20,7 @@ test('scope tests',() => {
     // scope inside block can accept makeSlot. then looks up the v slot.
     cval(`[ self makeSlot 'v' 5. self getSlot "v". ] value .`,scope, NumObj(5))
     cval(`[ self makeSlot "v" 5. self v. ] value .`,scope, NumObj(5))
-    cval(`[ self makeSlot "v" 5. v. ] value .`,scope, NumObj(5))
+    cval(`[ self makeSlot "v" 5. v ] value .`,scope, NumObj(5))
 
     // group evaluates to the last expression in the group.
     cval('8 + 8.',scope,NumObj(16))
@@ -319,20 +319,20 @@ test('JS style function calls ',() => {
 
 
  */
-    // cval(`
+//     cval(`
     //     a ::= (Object clone).
     //     a makeSlot "x" 55.
-    //     Debug equals: (a x) 55.
+//         Debug equals: (a x) 55.
     //     Debug equals: (a.x) 55.
     //     Debug equals: a.x 55.
-    //
+//
     //     a makeSlot "do" [xx|
     //         (self x) + xx.
-    //     ].
-    //
+//         ].
+//
     //     Debug equals: (a do 1) 56.
     //     Debug equals: (a do 1) 56.
-    //
+//
     //     99.
     // `,scope,NumObj(99))
 })

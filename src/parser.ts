@@ -290,7 +290,13 @@ export let BlockArgs = produce(
 
 export let BlockBody = produce(
     Seq(ZeroOrMore(Statement), ws(Optional(Exp))),
-    (res)=> res.production[0].flat()
+    (res)=> {
+        if (typeof res.production[1] !== "undefined") {
+            return res.production.flat()
+        } else {
+            return res.production[0].flat()
+        }
+    }
 );
 
 export let Block = produce(

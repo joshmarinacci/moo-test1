@@ -191,10 +191,17 @@ test("parse statement",() => {
     assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
 })
 test("parse block body", () => {
+    // two statements
     assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
         [
             Stmt(Num(4),Id("add"),Num(5)),
             Stmt(Num(6),Id("add"),Num(7),)
+        ])
+    // statement and solo expression
+    assert.deepStrictEqual(parseBlockBody("4 add 5 . a  "),
+        [
+            Stmt(Num(4),Id("add"),Num(5)),
+            Id('a'),
         ])
 })
 test("block",() => {
