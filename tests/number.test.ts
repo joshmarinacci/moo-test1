@@ -7,16 +7,18 @@ import {StrObj} from "../src/string.ts";
 import {BoolObj} from "../src/boolean.ts";
 
 test('arithmetic',() => {
-    let scope:Obj = make_standard_scope();
-    cval('4 .',scope,NumObj(4));
+    let scope:Obj = make_standard_scope()
+    cval('4 .',scope,NumObj(4))
     cval('4 value .',scope,NumObj(4))
-    cval('4 + 5.',scope,NumObj(9));
-    cval('4 - 5.',scope,NumObj(-1));
-    cval('4 * 2.',scope,NumObj(8));
-    cval('4 / 2.',scope,NumObj(2));
-    cval('(4 * 5) * 6.',scope,NumObj(120));
-    cval('(4 + 5) * 6.',scope,NumObj(54));
-    cval('4 + (5 * 6).',scope,NumObj(34));
+    cval('4 + 5.',scope,NumObj(9))
+    cval('4 - 5.',scope,NumObj(-1))
+    cval('4 * 2.',scope,NumObj(8))
+    cval('4 / 2.',scope,NumObj(2))
+    cval('(4 * 5) * 6.',scope,NumObj(120))
+    cval('(4 + 5) * 6.',scope,NumObj(54))
+    cval('4 + (5 * 6).',scope,NumObj(34))
+    cval(`-5.`,scope,NumObj(-5))
+    cval(`5 negate.`,scope,NumObj(-5))
 })
 
 test('floating point math',() => {

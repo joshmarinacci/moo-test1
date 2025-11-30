@@ -1,4 +1,4 @@
-import {Obj, ObjectProto} from "./obj.ts";
+import {NilObj, Obj, ObjectProto} from "./obj.ts";
 import {eval_block_obj} from "./eval.ts";
 import {BoolObj} from "./boolean.ts";
 import {StrObj} from "./string.ts";
@@ -48,9 +48,13 @@ const NumberProto = new Obj("NumberProto",ObjectProto,{
         for(let i=start; i<end; i++) {
             eval_block_obj(block, [NumObj(i)])
         }
+        return NilObj()
     },
     'print':(rec:Obj):Obj => {
         return StrObj(rec._get_js_number()+'')
+    },
+    'negate':(rec:Obj):Obj => {
+        return NumObj(-rec._get_js_number())
     }
 });
 export const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, { 'jsvalue': value,})
