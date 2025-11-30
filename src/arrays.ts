@@ -91,18 +91,15 @@ export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"j
 const SetProto = new Obj("SetProto",ObjectProto,{
     'add:':(rec:Obj, args:Array<Obj>):Obj => {
         let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        console.log('the set is',set)
         set.add(args[0])
         return NilObj()
     },
     'size':(rec:Obj, args:Array<Obj>):Obj => {
         let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        console.log("the set is",set)
         return NumObj(set.size)
     },
     'withAll:':(rec:Obj, args:Array<Obj>):Obj => {
         let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        console.log("adding all is", args[0])
         return rec
     },
     '+':(rec:Obj, args:Array<Obj>):Obj => {
