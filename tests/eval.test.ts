@@ -262,9 +262,9 @@ test('fizzbuzz',() => {
     let scope = make_standard_scope()
     cval(`
     [
-    1 range 100 [ n |
-        three ::= ((n mod 3) == 0).
-        five ::= ((n mod 5) == 0).
+    1 range: 100 [ n |
+        three ::= ((n mod: 3) == 0).
+        five ::= ((n mod: 5) == 0).
         (three and: five) ifTrue: [ 
             return ("FizzBuzz" print).  
         ].

@@ -26,9 +26,9 @@ const NumberProto = new Obj("NumberProto",ObjectProto,{
     '<':js_bool_op((a,b)=>a<b),
     '>':js_bool_op((a,b)=>a>b),
     '==':js_bool_op((a,b)=>a==b),
-    'mod':js_num_op((a,b)=>a%b),
+    'mod:':js_num_op((a,b)=>a%b),
     'sqrt':(rec:Obj):Obj => NumObj(Math.sqrt(rec._get_js_number())),
-    'range':(rec:Obj, args:Array<Obj>):Obj => {
+    'range:':(rec:Obj, args:Array<Obj>):Obj => {
         let start = rec._get_js_number()
         let end = args[0]._get_js_number()
         let block = args[1]

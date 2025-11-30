@@ -31,8 +31,8 @@ test('fill image',() => {
     cval(`[
         image ::= (Image make: 10 10).
         image fill: [x y |
-            ((x mod 2) == 0) ifTrue: [ return (Color red). ].
-            ((y mod 2) == 0) ifTrue: [ return (Color green). ].
+            ((x mod: 2) == 0) ifTrue: [ return (Color red). ].
+            ((y mod: 2) == 0) ifTrue: [ return (Color green). ].
             Color black.
           ].
         image save: "output/bar.png".
