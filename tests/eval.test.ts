@@ -57,15 +57,6 @@ test('nil',() => {
     let scope:Obj = make_standard_scope();
     cval(`nil .`,scope, NilObj())
 })
-test('booleans',() => {
-    let scope:Obj = make_standard_scope();
-    cval('true .',scope,BoolObj(true));
-    cval('false .',scope,BoolObj(false));
-    cval('4 < 5 .',scope,BoolObj(true));
-    cval('4 > 5 .',scope,BoolObj(false));
-    cval('4 == 4 .',scope,BoolObj(true));
-    cval('4 == 5 .',scope,BoolObj(false));
-})
 test('strings',() => {
     let scope = make_standard_scope()
     cval('"foo" .', scope,StrObj("foo"))

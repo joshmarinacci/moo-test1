@@ -13,6 +13,7 @@
     "test-images": "node tests/image.test.ts",
     "test-point": "node tests/point.test.ts",
     "test-number": "node tests/number.test.ts",
+    "test-boolean": "node tests/boolean.test.ts",
     "test": "npm run test-eval && npm run test-parser && npm run test-lists && npm run test-images && npm run test-point"
   },
   "devDependencies": {
