@@ -3,7 +3,6 @@ import {cval} from "../src/eval.ts";
 import {make_standard_scope} from "../src/standard.ts";
 import {NilObj, Obj, ObjectProto} from "../src/obj.ts";
 import {NumObj} from "../src/number.ts";
-import {BoolObj} from "../src/boolean.ts";
 import {StrObj} from "../src/string.ts";
 
 
@@ -56,11 +55,6 @@ test('scope tests',() => {
 test('nil',() => {
     let scope:Obj = make_standard_scope();
     cval(`nil .`,scope, NilObj())
-})
-test('strings',() => {
-    let scope = make_standard_scope()
-    cval('"foo" .', scope,StrObj("foo"))
-    cval('"foo" + "bar" .', scope,StrObj("foobar"))
 })
 test('conditions',() => {
     let scope = make_standard_scope()

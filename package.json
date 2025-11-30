@@ -14,7 +14,8 @@
     "test-point": "node tests/point.test.ts",
     "test-number": "node tests/number.test.ts",
     "test-boolean": "node tests/boolean.test.ts",
-    "test": "npm run test-eval && npm run test-parser && npm run test-lists && npm run test-images && npm run test-point"
+    "test-string": "node tests/string.test.ts",
+    "test": "npm run test-eval && npm run test-parser && npm run test-lists && npm run test-images && npm run test-point && npm run test-number && npm run test-boolean && npm run test-string"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
