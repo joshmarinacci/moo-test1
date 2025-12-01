@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #editor-root {
+            border: 1px solid #ccc;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Smalltalk Browser Demo</h1>
+
+<script type="module">
+    import {parseBlockBody} from "./src/parser.ts";
+    import {NilObj} from "./src/obj.ts";
+    import {JoshLogger} from "./src/util.ts";
+    import {eval_ast} from "./src/eval.ts";
+    import {make_browser_scope} from "./src/browser.ts";
+
+    let scope = make_browser_scope()
+
+    const $ = (sel) => document.querySelector(sel)
+    const on = (el,type,cb) => el.addEventListener(type,cb)
+    const d = new JoshLogger()
+    function cval(code, scope) {
+        // d.disable()
+        d.p('=========')
+        d.p(`code is '${code}'`)
+        let body = parseBlockBody(code);
+        d.p('ast is', body.toString())
+        let last = NilObj()
+        if (Array.isArray(body)) {
+            for (let ast of body) {
+                last = eval_ast(ast, scope)
+                if (!last) last = NilObj()
+            }
+        } else {
+            last = eval_ast(body, scope);
+        }
+        if (last._is_return) last = last.get_slot('value');
+        d.p("returned", last.print())
+        return last
+    }
+
+    cval(`[
+            dom ::= (DomProxy clone).
+            dom init.
+            button ::= (dom makeButton: "hi there").
+            Debug print: 'here'.
+            dom append: button.
+        ] value.`,scope)
+
+    // on($("#start-button"),'click',() => {
+    //     console.log("doing stuff on the click")
+    //     console.log(scope)
+    // })
+</script>
+</body>
+</html>

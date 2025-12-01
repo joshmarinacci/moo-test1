@@ -2,7 +2,7 @@ import {JoshLogger} from "./util.ts";
 import {parseBlockBody} from "./parser.ts";
 
 import {Ast, BlockAst, GroupAst, IdAst, ListLiteralAst, MapLiteralAst, NumAst, StmtAst, StrAst} from "./ast.ts"
-import assert from "node:assert";
+// import assert from "node:assert";
 import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {DictObj, ListObj} from "./arrays.ts";
 import {NumObj} from "./number.ts";
@@ -108,7 +108,7 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     }
     throw new Error("invalid method")
 }
-function eval_ast(ast:Ast, scope:Obj):Obj {
+export function eval_ast(ast:Ast, scope:Obj):Obj {
     if (ast.type === 'num') return NumObj((ast as NumAst).value)
     if (ast.type === "str") return StrObj((ast as StrAst).value)
     if (ast.type === 'id') return SymRef((ast as IdAst).value)
@@ -222,7 +222,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
             console.log(last)
             console.log(expected)
         }
-        assert(objsEqual(last, expected))
+        // assert(objsEqual(last, expected))
     }
 }
 

@@ -187,6 +187,9 @@ export class Obj {
     _get_js_record():Record<string,Obj> {
         return this.get_js_slot('jsvalue') as Record<string,Obj>
     }
+    _get_js_unknown():unknown {
+        return this.get_js_slot('jsvalue') as unknown
+    }
 
     clone() {
         let obj = new Obj(this.name, this.parent, this.getSlots())

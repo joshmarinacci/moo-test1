@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "vite build",
+    "dev": "vite dev",
     "test-eval": "node tests/eval.test.ts",
     "test-parser": "node tests/parser.test.ts",
     "test-raytracer": "node tests/raytracer.ts",
@@ -19,7 +20,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vite": "^7.2.6"
   },
   "private": true,
   "dependencies": {

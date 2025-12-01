@@ -49,21 +49,64 @@ test("foo",() => {
 # next up
 
 - [x] Lists are having a shared js list array.
-- [ ] List print. impl in ST by mapping to str then joining with add.
-- [ ] Dict print
-- [ ] Set print
+- [ ] collections
+  - [x] List, Dict, Set == by reference to start
+  - [x] new JSset impl
+  - [ ] List print. impl in ST by mapping to str then joining with add.
+  - [ ] Dict print
+  - [ ] Set print
 - [x] Object ==  same name, same hashcode. same JS ref?
 - [ ] expose Object isKindOf:
-- [x] List, Dict, Set == by reference to start
-- [x] new JSset impl
+  - this uses boolean object, so we need to add it later in the init process.
 - [ ] units
   - [x] 10 unit: “meters”
-  - [ ] 10m * 2ft as: “square inches”
-  - [ ] 10_meters is shorthand
   - [x] Turns into UnitNumber with new arithmetic functions
   - [x] Print turns into string
-  - [ ] Number_unitname is sugar for number unit: unitname. 
+  - [ ] Number withUnit: unit. returns UnitNumber
+  - [ ] 10m * 2ft as: “square inches”
+  - [ ] UnitNumber as: unit.  returns new number with the unit conversion, or throws error. ex: 10m * 2ft as "square inch". 
+  - [ ] unit: sets the unit. turns string into proper unit object. can parse dimensions too.
+  - [ ] make Unit enum. Meters, Millimeters, Feet, Inches
+  - [ ] update parser to support 10.5_meters shorthand.
+  - [ ] Number_unitname is sugar for UnitNumber amount: number unit: unitname.
 
+```smalltalk
+Unit makeMethod: "init" [ 
+  Meter ::= Unit clone. 
+  Meter name: 'meter'.
+  Millimeter ::= Unit clone.
+  Millimeter name: 'millimeter'.
+  Meter addConversion: Millimeter 1000.
+  Millimeter addConversion: Meter 0.001. 
+].
+Unit makeMethod: "print": [
+  self name.
+].  
+Unit makeMethod: "hashcode": [
+  ("unit_" + (self name)).
+]
+
+Unit init.
+ 
+ 
+A ::= (5 unit: (Unit Meter)).
+B ::= (0.5 unit: (Unit Meter)).
+C ::= ((A + B) as: (Unit Millimeter)).
+Debug equals (C amount) 5500.
+Debug equals (C unit) (Unit Millimeter).
+Debug equals (C dimension) 1.
+
+```
+
+
+* delegation
+  * capture does not understand to resend a message to another target.
+  * number.append doesn't exist. is caught. resends to number.print.
+  * `5 append: 5` returns the *string* `55`.
+  * Number.doesNotUnderstand [mess args | (self print) sendMessage mess args.
+
+
+## GUI and GFX and Output
 
 * Design simple gfx and input model for interactive code browser
   - [ ] Show list of current objects and methods
@@ -76,9 +119,49 @@ test("foo",() => {
   - [ ] Button to trigger loading and rendering the scope
   - [ ] ObjectBrowser render: DOMProxy.  
 
+Page loads JS source to set up the entire env.  There is a plain JS button. Clicking the button will invoke 
+```
+[
+  dom ::= ((DOMProxy clone) init).
+  ObjectBrowserDemo render: dom.
+] value. 
 
+```
+
+
+
+## parser
 Fix precedence of parsing so that we don't need so many parens
- unary > binary > keyword 
+ unary > binary > keyword
+
+```typescript
+import {ZeroOrMore} from "./parser";
+
+Colon = Lit(":")
+Underscore = Lit("_")
+
+AlphaNumUnder = Or(Alpha, Digit, Underscore);
+PlainId = Seq(Alpha, OneOrMore(AlphaNumUnder))
+SymbolID = OneOrMore(Sym)
+KeywordID = Seq(Alpha, OneOrMore(AlphaNumUnder), Colon)
+UnarySend = PlainId()
+BinarySend = Seq(SymbolId, SoloExp)
+KeywordSend = OneOrMore(Seq(KeywordId, SoloExp))
+MessageSend = Seq(Receiver, Or(UnarySend, BinarySend, KeywordSend))
+Group       = Seq(OpenParen, SoloExp, CloseParen)
+SoloExp = Or(Group, MessageSend, Literal, Reference)
+Statement = Seq(SoloExp, Period)
+BlockBody = Seq(ZeroOrMore(Statement),Optional(SoloExp))
+``` 
+
+
+Debug print: 4 + 5. -> Debug.print(4.add(5));
 
 
 
+
+
+
+## Ideas
+
+* How can do worlds? be able to 'fork' the world, do crazy stuff, then diff between the world and it's parent world. should be lazy copy on write. 
