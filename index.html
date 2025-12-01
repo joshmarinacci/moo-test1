@@ -13,12 +13,15 @@
             height: 10rem;
         }
         #editor-console {
+            font-family: monospace;
             border: 1px solid gold;
             list-style: none;
             li {
                 border: 0px solid red;
                 padding: 0.5rem;
             }
+            overflow: auto;
+            max-height: 20rem;
         }
     </style>
 </head>
@@ -40,33 +43,48 @@
     const $ = (sel) => document.querySelector(sel)
     const on = (el,type,cb) => el.addEventListener(type,cb)
     const d = new JoshLogger()
-    function cval(code, scope) {
-        // d.disable()
-        d.p('=========')
-        d.p(`code is '${code}'`)
-        let body = parseBlockBody(code);
-        d.p('ast is', body.toString())
-        let last = NilObj()
-        if (Array.isArray(body)) {
-            for (let ast of body) {
-                last = eval_ast(ast, scope)
-                if (!last) last = NilObj()
-            }
-        } else {
-            last = eval_ast(body, scope);
-        }
-        if (last._is_return) last = last.get_slot('value');
-        d.p("returned", last.print())
+
+    function output(last) {
         const li = document.createElement('li')
-        if(last.is_kind_of('NumberProto')) {
+        console.log("typeof last is " + typeof last)
+        console.log("typeof last is " + last instanceof Error)
+        if (Error.isError(last)) {
+            li.innerText = last.message
+        } else if(last.is_kind_of('NumberProto')) {
             li.innerText = "Number: " + last._get_js_number()
         } else if(last.is_kind_of('StringProto')) {
             li.innerText = "String: " + last._get_js_string()
         } else {
             li.innerText = "Object: " + last.print()
         }
-        $("#editor-console").append(li)
-        return last
+        const cons = $("#editor-console")
+        cons.append(li)
+        cons.scrollTop = cons.scrollHeight
+
+    }
+    function cval(code, scope) {
+        d.disable()
+        d.p('=========')
+        d.p(`code is '${code}'`)
+        let body = parseBlockBody(code);
+        d.p('ast is', body.toString())
+        try {
+            let last = NilObj()
+            if (Array.isArray(body)) {
+                for (let ast of body) {
+                    last = eval_ast(ast, scope)
+                    if (!last) last = NilObj()
+                }
+            } else {
+                last = eval_ast(body, scope);
+            }
+            if (last._is_return) last = last.get_slot('value');
+            d.p("returned", last.print())
+            output(last)
+        } catch (e) {
+            console.log("error happened",e.name, e.type,e.message)
+            output(e)
+        }
     }
 
     cval(`[

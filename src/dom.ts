@@ -18,22 +18,28 @@ export function setup_dom(scope: Obj) {
             const editorConsole = document.createElement('li')
             editorConsole.id = "editor-console";
             editorConsole.innerHTML = "";
-            editorContent.appendChild(editorConsole);
+            editorRoot.appendChild(editorConsole);
             return NilObj()
         },
         'document':(rec:Obj) => {
             return rec._get_js_record()
         },
         'makeButton:': (rec:Obj, args:Array<Obj>):Obj => {
-            console.log("making a button. cool")
             let button = document.createElement("button")
             button.innerText = args[0]._get_js_string()
             let object = new Obj("domelement",ObjectProto,{})
             object._make_js_slot('jsvalue',button)
             return object
         },
+        'makeSpan:': (rec:Obj, args:Array<Obj>):Obj => {
+            let element = document.createElement("span")
+            element.innerText = args[0]._get_js_string()
+            let object = new Obj("domelement",ObjectProto,{})
+            object._make_js_slot('jsvalue',element)
+            return object
+        },
         'append:':(rec:Obj, args:Array<Obj>):Obj => {
-            $("#editor-root").append(args[0]._get_js_unknown() as Element)
+            $("#editor-content").append(args[0]._get_js_unknown() as Element)
             return NilObj()
         },
         "clear":(rec:Obj) => {

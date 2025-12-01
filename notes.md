@@ -110,8 +110,8 @@ Debug equals (C dimension) 1.
 
 * Design simple gfx and input model for interactive code browser
   - [ ] Show list of current objects and methods
-  - [ ] Manipulate the DOM directly
-  - [ ] DomProxy to access the dom.
+  - [x] Manipulate the DOM directly
+  - [x] DomProxy to access the dom.
   - [ ] AsDOM to render self to an html element
   - [ ] View but not edit source code
   - [ ] Splat the entire object graph to and from JSON and local storage
