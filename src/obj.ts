@@ -16,7 +16,9 @@ export class Obj {
     _data_slots: Map<string, Obj>;
     _method_slots: Map<string, Obj>;
     _is_return: boolean;
+    private _hash_value: string;
     constructor(name: string, parent: Obj|null, props:Record<string,unknown>) {
+        this._hash_value = "obj_"+(Math.random()*1_000_000)
         this.name = name;
         this.parent = parent
         this._data_slots = new Map<string,Obj>
@@ -246,6 +248,16 @@ export class Obj {
         if(this.name == name) return true
         if(this.parent) return this.parent.is_kind_of(name)
         return false;
+    }
+
+    hashvalue() {
+        if(this.is_kind_of('NumberProto')) {
+            return this._get_js_number()
+        }
+        if(this.is_kind_of('StringProto')) {
+            return this._get_js_string()
+        }
+        return this._hash_value
     }
 }
 

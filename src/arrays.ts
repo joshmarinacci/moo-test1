@@ -3,6 +3,86 @@ import {NumObj} from "./number.ts";
 import {cval, eval_block_obj} from "./eval.ts";
 import {StrObj} from "./string.ts";
 
+class JSSet {
+    data: Map<unknown,Obj>
+    constructor() {
+        this.data = new Map()
+    }
+    add(obj:Obj) {
+        if(!this.data.has(obj.hashvalue())) {
+            this.data.set(obj.hashvalue(),obj)
+        }
+    }
+    has(obj:Obj):boolean {
+        return this.data.has(obj.hashvalue())
+    }
+
+    // //select :: filter
+    //     set ::= Set clone.
+    //     self do: [v |
+    //         (A value: {v}) ifTrue: [ set put: v]
+    //     ].
+    //     ^ set.
+
+    //detect :: find
+    //collect :: map
+    //reject :: !filter
+    //inject :: fold / reduce
+    //inject value collection
+
+    size() {
+        return this.data.size
+    }
+
+    addAll(jsSlot: unknown) {
+        // console.log("adding from jsslot",jsSlot)
+        if(jsSlot instanceof JSSet) {
+            for (let [key,value] of jsSlot.data.entries()) {
+                this.add(value)
+            }
+        }
+        if(Array.isArray(jsSlot)) {
+            for(let obj of jsSlot) {
+                this.add(obj)
+            }
+        }
+    }
+
+
+    private forEach(param: (v:Obj) => void) {
+        this.data.forEach((vv) => {
+            param(vv)
+        })
+    }
+
+    difference(B: JSSet) {
+        let set = new JSSet()
+        this.forEach(v => {
+            if(!B.has(v)) {
+                set.add(v)
+            }
+        })
+        return set
+    }
+    intersect(B: JSSet) {
+        let set = new JSSet()
+        this.forEach(v => {
+            if(B.has(v)) {
+                set.add(v)
+            }
+        })
+        return set
+    }
+    union(B: JSSet) {
+        let set = new JSSet()
+        this.forEach(v => {
+            set.add(v)
+        })
+        B.forEach(v => set.add(v))
+        return set
+    }
+}
+
 export const ListProto = new Obj("ListProto",ObjectProto, {
     'clone':(rec:Obj) => {
         let copy = rec.clone()
@@ -101,32 +181,42 @@ export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"j
 const SetProto = new Obj("SetProto",ObjectProto,{
     'clone':(rec:Obj) => {
         let copy = rec.clone()
-        copy._make_js_slot('jsvalue',new Set())
+        copy._make_js_slot('jsvalue',new JSSet())
         return copy
     },
     'add:':(rec:Obj, args:Array<Obj>):Obj => {
-        let set = rec.get_js_slot('jsvalue') as Set<Obj>
+        let set = rec.get_js_slot('jsvalue') as JSSet
         set.add(args[0])
         return NilObj()
     },
     'size':(rec:Obj, args:Array<Obj>):Obj => {
-        let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        return NumObj(set.size)
+        let set = rec.get_js_slot('jsvalue') as JSSet
+        return NumObj(set.size())
     },
     'withAll:':(rec:Obj, args:Array<Obj>):Obj => {
-        let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        return rec
+        let set2 = new JSSet()
+        set2.addAll(rec.get_js_slot('jsvalue'))
+        set2.addAll(args[0].get_js_slot('jsvalue'))
+        return SetObj(set2)
     },
     '+':(rec:Obj, args:Array<Obj>):Obj => {
-        let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        return NilObj()
+        let A = rec.get_js_slot('jsvalue') as JSSet
+        let B = args[0].get_js_slot('jsvalue') as JSSet
+        return SetObj(A.union(B))
     },
     '-':(rec:Obj, args:Array<Obj>):Obj => {
-        let set = rec.get_js_slot('jsvalue') as Set<Obj>
-        return NilObj()
+        let A = rec.get_js_slot('jsvalue') as JSSet
+        let B = args[0].get_js_slot('jsvalue') as JSSet
+        return SetObj(A.difference(B))
+    },
+    'intersect:':(rec:Obj, args:Array<Obj>):Obj => {
+        let A = rec.get_js_slot('jsvalue') as JSSet
+        let B = args[0].get_js_slot('jsvalue') as JSSet
+        return SetObj(A.intersect(B))
     },
 })
-SetProto._make_js_slot("jsvalue",new Set())
+SetProto._make_js_slot("jsvalue",new JSSet())
+export const SetObj = (obj:JSSet) => new Obj('Set',SetProto,{"jsvalue":obj})
 
 
 export function setup_arrays(scope:Obj) {

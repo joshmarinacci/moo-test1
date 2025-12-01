@@ -72,9 +72,9 @@ test('list api', () => {
         Debug equals: (l size) 2.
         Debug equals: (l at: 1) 8.
 
-        l do: [ n | n. ].         
+        l do: [ n | n. ].
 
-        l add: 5. 
+        l add: 5.
 
         // array contains 1 8 5
         Debug equals: ((l select: [n | n > 1. ]) size) 2.
@@ -126,6 +126,8 @@ test('set api',() => {
     let scope = make_standard_scope()
     cval(`[
         set ::= (Set clone).
+        
+        // size
         set add: 1.
         Debug equals: (set size) 1.
 
@@ -134,17 +136,20 @@ test('set api',() => {
 
         // duplicates don't increase the size
         set add: 88.
-        // Debug equals: (set size) 2.
+        Debug equals: (set size) 2.
 
         A ::= (Set withAll: ({ 1 2 3 })).
-        B ::= (Set withAll: { 3 4 5 }).
+        B ::= (Set withAll: ({ 3 4 5 })).
+        Debug equals: (A size) 3.
+        Debug equals: (B size) 3.
         C ::= (A - B).
-        // Debug equals: (A size) 3.
-        // Debug equals: (B size) 3.
-        // Debug equals: (C size) 2.
+        Debug equals: (C size) 2.
 
         D ::= (A + B).
-        // Debug equals: (D size) 5.
+        Debug equals: (D size) 5.
+        
+        E ::= (A intersect: B).
+        Debug equals: (E size) 1.
 
         67.
         ] value.
@@ -165,63 +170,3 @@ test('array common protocol',() => {
     // cval(`8 == '8'.`,scope,BoolObj(false))
 })
 
-/*
-class JSSet {
-  data: Map<string,Obj>
-  constructor() {
-      this.data = new Map()
-  }
-  put(obj:Obj) {
-      if(!this.data.has(obj.hashvalue()) {
-          this.data.set(obj.hashvalue(),obj)
-      }
-  }
-  has(obj:Obj) {
-      this.data.has(obj.hashvalue())
-  }
-  union(set:JSSet) {
-  }
-  intersect(set:JSSet) {
-  }
-  difference(set:JSSet) {
-  }
-  //union:
-      set ::= Set clone.
-      self do: [v | set put: v].
-      A do: [v | set put: v].
-      ^ set.
-
-  //intersect:
-      set ::= Set clone.
-      self do [v |
-          (A has: v) ifTrue: [ set put: v]
-      ].
-      ^ set.
-
-  // difference:
-      set ::= Set clone.
-      self do: [v |
-          (A has: v) ifFalse: [ set put: v]
-      ].
-      A do:[v |
-          (self has: v) ifFalse: [ set put: v]
-      ].
-      ^ set.
-
-  //select :: filter
-      set ::= Set clone.
-      self do: [v |
-          (A value: {v}) ifTrue: [ set put: v]
-      ].
-      ^ set.
-
-  //detect :: find
-  //collect :: map
-  //reject :: !filter
-  //inject :: fold / reduce
-  //inject value collection
-
-
-}
-
- */
