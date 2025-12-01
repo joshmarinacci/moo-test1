@@ -56,24 +56,9 @@ test('units',() => {
 })
 
 /*
-'foo' print == 'foo'.
-(4 > 5) print == 'false'.
-
 'foo' == 'foo' // true
 'foo' == 'bar' // false
 4 + 5 == 9 // true
 
-Object makeSlot: '==' [ a | (self classname) == (a classname) ].
-Number makeSlot: '==' [ a | ^ self nativeCall: 'equals' a.].
-Number.add_js_method('equals', (rec, args) => {
-  if (rec.name !== 'Number') return BoolValue(false);
-  if (rec._getJSNumber() == args[0]._getJSNumber()) return BoolValue(true);
-  if return BoolValue(false);
-});
-
-
-Object makeSlot: 'isKindOf' [ name |
-  ^ (self classname) == name
-].
 
 */

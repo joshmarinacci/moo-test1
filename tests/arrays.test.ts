@@ -6,6 +6,8 @@ import {make_standard_scope} from "../src/standard.ts";
 import {DictObj, ListObj} from "../src/arrays.ts";
 import {NumObj} from "../src/number.ts";
 import {match} from "./common.ts";
+import {StrObj} from "../src/string.ts";
+import {BoolObj} from "../src/boolean.ts";
 
 
 test('parse array list literals',() => {
@@ -59,11 +61,11 @@ test('list api', () => {
     cval(`[
         l ::= (List clone).
         Debug equals: (l size) 0.
-        
+
         l add: 1.
         Debug equals: (l size) 1.
         Debug equals: (l at: 0) 1.
-        
+
         l add: 3.
         Debug equals: (l size) 2.
         l setAt: 1 8.
@@ -71,21 +73,21 @@ test('list api', () => {
         Debug equals: (l at: 1) 8.
 
         l do: [ n | n. ].         
-        
+
         l add: 5. 
 
         // array contains 1 8 5
         Debug equals: ((l select: [n | n > 1. ]) size) 2.
         Debug equals: ((l select: [n | n > 6. ]) size) 1.
         Debug equals: ((l reject: [n | n > 6. ]) size) 2.
-        
-        
+
+
         l2 ::= (l collect: [n | n * 2.]).
         // array contains 2 16 10
         Debug equals: (l2 size) 3.
         Debug equals: (l2 at: 0) 2.
         Debug equals: (l2 at: 1) 16.
-        
+
         67.
     ] value.`,scope, NumObj(67))
 })
@@ -100,21 +102,21 @@ test('dict api',() => {
         Debug equals: (dict get: "seven") 7.
         dict size.
 
-        
+
         keys ::= (dict keys).
         Debug equals: (keys size) 2.
-        Debug equals: (keys at: 0) "six".        
-        Debug equals: (keys at: 1) "seven".        
+        Debug equals: (keys at: 0) "six".
+        Debug equals: (keys at: 1) "seven".
 
-        values ::= (dict values).        
+        values ::= (dict values).
         Debug equals: (values size) 2.
         Debug equals: (values at: 0) 6.
         Debug equals: (values at: 1) 7.
-        
+
         values2 ::= ((dict values) collect: [n | n + 2.]).
         Debug equals: (values2 at: 0) 8.
         Debug equals: (values2 at: 1) 9.
-        
+
         67.
         ] value.
     `,scope, NumObj(67))
@@ -130,25 +132,38 @@ test('set api',() => {
         set add: 88.
         Debug equals: (set size) 2.
 
-        // duplicates don't increase the size        
+        // duplicates don't increase the size
         set add: 88.
         // Debug equals: (set size) 2.
-        
+
         A ::= (Set withAll: ({ 1 2 3 })).
         B ::= (Set withAll: { 3 4 5 }).
         C ::= (A - B).
         // Debug equals: (A size) 3.
         // Debug equals: (B size) 3.
         // Debug equals: (C size) 2.
-        
+
         D ::= (A + B).
         // Debug equals: (D size) 5.
-        
+
         67.
         ] value.
     `,scope, NumObj(67))
 })
 
+
+test('array common protocol',() => {
+    let scope = make_standard_scope()
+    // cval(`[
+    //     l ::= List clone.
+    //     l add: 5.
+    //     // Debug print: (l print).
+    // ] value .`,scope)
+    // cval(`({ 4 5 }) print.`,scope,StrObj('6'))
+    // cval(`6 == 7.`,scope,BoolObj(false))
+    // cval(`8 == 8.`,scope,BoolObj(true))
+    // cval(`8 == '8'.`,scope,BoolObj(false))
+})
 
 /*
 class JSSet {

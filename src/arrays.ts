@@ -1,9 +1,14 @@
 import {NilObj, Obj, ObjectProto} from "./obj.ts";
 import {NumObj} from "./number.ts";
-import {eval_block_obj} from "./eval.ts";
+import {cval, eval_block_obj} from "./eval.ts";
 import {StrObj} from "./string.ts";
 
 export const ListProto = new Obj("ListProto",ObjectProto, {
+    'clone':(rec:Obj) => {
+        let copy = rec.clone()
+        copy._make_js_slot('jsvalue',[])
+        return copy
+    },
     'add:':(rec:Obj, args:Array<Obj>):Obj=>{
         let arr = rec._get_js_array()
         arr.push(args[0]);
@@ -61,6 +66,11 @@ ListProto._make_js_slot('jsvalue',[])
 export const ListObj = (...args:Array<Obj>)=> new Obj("List", ListProto, {'jsvalue': args})
 
 export const DictProto = new Obj('DictProto',ObjectProto, {
+    'clone':(rec:Obj) => {
+        let copy = rec.clone()
+        copy._make_js_slot('jsvalue',{})
+        return copy
+    },
     'get:':(rec:Obj, args:Array<Obj>):Obj => {
         let arr = rec._get_js_record()
         let key = args[0]._get_js_string()
@@ -89,6 +99,11 @@ DictProto._make_js_slot("jsvalue",{})
 export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})
 
 const SetProto = new Obj("SetProto",ObjectProto,{
+    'clone':(rec:Obj) => {
+        let copy = rec.clone()
+        copy._make_js_slot('jsvalue',new Set())
+        return copy
+    },
     'add:':(rec:Obj, args:Array<Obj>):Obj => {
         let set = rec.get_js_slot('jsvalue') as Set<Obj>
         set.add(args[0])
@@ -118,6 +133,15 @@ export function setup_arrays(scope:Obj) {
     scope._make_method_slot("List",ListProto)
     scope._make_method_slot("Dict",DictProto)
     scope._make_method_slot("Set",SetProto)
+
+    // cval(`[
+    //     List makeSlot 'print' [
+    //         str ::= (self collect: [n |
+    //             "bar"
+    //         ]).
+    //         str.
+    //     ].
+    // ] value.`,scope)
 }
 
 

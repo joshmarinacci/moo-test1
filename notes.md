@@ -46,5 +46,37 @@ test("foo",() => {
 
 
 
+# next up
+
+- [ ] Lists
+  - [ ] Lists are having a shared js list array.
+  - [ ] List print. impl in ST by mapping to str then joining with add.
+- [ ] Dict 
+* Dict print
+* Set print
+* Object ==  same name, same hashcode. same JS ref?
+* expose Object isKindOf:
+* List, Dict, Set == by reference to start
+* new JSset impl
+* units
+  - [ ] 10 unit: “meters”
+  - [ ] 10m * 2ft as: “square inches”
+  - [ ] 10_meters is shorthand
+  - [ ] Turns into UnitNumber with new arithmetic functions
+  - [ ] Print turns into string
+  - [ ] Number_unitname is sugar for number unit: unitname. 
+
+
+* Design simple gfx and input model for interactive code browser
+  - [ ] Show list of current objects and methods
+  - [ ] Manipulate the DOM directly
+  - [ ] DomProxy to access the dom.
+  - [ ] AsDOM to render self to an html element
+  - [ ] View but not edit source code
+  - [ ] Splat the entire object graph to and from JSON and local storage
+  - [ ] Render. List of classes. Project to DOM LI
+  - [ ] Button to trigger loading and rendering the scope
+  - [ ] ObjectBrowser render: DOMProxy.  
+
 
 
