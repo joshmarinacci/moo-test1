@@ -8,7 +8,8 @@ export function isNil(method: Obj) {
 }
 
 const d = new JoshLogger()
-d.enable()
+// d.enable()
+d.disable()
 
 
 export class Obj {
@@ -137,6 +138,9 @@ export class Obj {
     }
     get_slot(name: string):Obj {
         return this._method_slots.get(name)
+    }
+    list_slot_names():string[] {
+        return Array.from(this._method_slots.keys())
     }
 
     lookup_slot(name: string):Obj {
@@ -301,7 +305,7 @@ export const ROOT = new Obj("ROOT", null,{
         rec.dump();
         d.outdent()
         return NilObj()
-    }
+    },
 });
 export const ObjectProto = new Obj("ObjectProto", ROOT, {})
  const NilProto = new Obj("NilProto",ObjectProto,{});

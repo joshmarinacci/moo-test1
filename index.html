@@ -19,6 +19,9 @@
             li {
                 border: 0px solid red;
                 padding: 0.5rem;
+                &.error {
+                    color: red;
+                }
             }
             overflow: auto;
             max-height: 20rem;
@@ -50,12 +53,16 @@
         console.log("typeof last is " + last instanceof Error)
         if (Error.isError(last)) {
             li.innerText = last.message
+            li.classList.add('error')
         } else if(last.is_kind_of('NumberProto')) {
             li.innerText = "Number: " + last._get_js_number()
+            li.classList.add('number')
         } else if(last.is_kind_of('StringProto')) {
             li.innerText = "String: " + last._get_js_string()
+            li.classList.add('string')
         } else {
             li.innerText = "Object: " + last.print()
+            li.classList.add('object')
         }
         const cons = $("#editor-console")
         cons.append(li)

@@ -118,6 +118,7 @@ Debug equals (C dimension) 1.
   - [ ] Render. List of classes. Project to DOM LI
   - [ ] Button to trigger loading and rendering the scope
   - [ ] ObjectBrowser render: DOMProxy.  
+    - [ ] list all objects in global scope 
 
 Page loads JS source to set up the entire env.  There is a plain JS button. Clicking the button will invoke 
 ```
@@ -125,6 +126,16 @@ Page loads JS source to set up the entire env.  There is a plain JS button. Clic
   dom ::= ((DOMProxy clone) init).
   ObjectBrowserDemo render: dom.
 ] value. 
+
+dom clear.
+(Global listSlotNames) do:  [ v |
+  Debug print: v.
+  button ::= (dom makeButton: v).
+  button onClick: [
+     Debug print: v.
+  ].
+  dom append: button.
+].
 
 ```
 

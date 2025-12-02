@@ -174,6 +174,16 @@ export const DictProto = new Obj('DictProto',ObjectProto, {
         let record = rec._get_js_record()
         return ListObj(... Object.values(record))
     },
+    'do:':(rec:Obj, args:Array<Obj>):Obj=>{
+        let arr = rec._get_js_record()
+        let block = args[0]
+        Object.keys(arr).forEach(key => {
+            let value = arr[key]
+            let key_o = StrObj(key)
+            let ret = eval_block_obj(block,[key_o,value]) as Obj
+        })
+        return NilObj()
+    },
 })
 DictProto._make_js_slot("jsvalue",{})
 export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})

@@ -1,9 +1,21 @@
 import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {eval_block_obj} from "./eval.ts";
 
 const $ = (sel:string):Element => document.querySelector(sel)
 const on = (el:Element,type:string,cb:unknown) => el.addEventListener(type,cb)
 
 export function setup_dom(scope: Obj) {
+    const ElementProto = new Obj("DomElement",ObjectProto,{
+        'onClick:':(rec:Obj,args:Array<Obj>)=>{
+            let element = rec._get_js_unknown() as Element
+            let block = args[0]
+            element.addEventListener('click',() => {
+                let ret = eval_block_obj(block,[]) as Obj
+            })
+            return NilObj()
+        }
+    })
+
     const DomProxyProto = new Obj("DomProxyProto",ObjectProto,{
         'init':(rec:Obj, args:Array<Obj>):Obj => {
             console.log("setting up the dom proxy")
@@ -25,16 +37,16 @@ export function setup_dom(scope: Obj) {
             return rec._get_js_record()
         },
         'makeButton:': (rec:Obj, args:Array<Obj>):Obj => {
-            let button = document.createElement("button")
-            button.innerText = args[0]._get_js_string()
-            let object = new Obj("domelement",ObjectProto,{})
-            object._make_js_slot('jsvalue',button)
+            let element = document.createElement("button")
+            element.innerText = args[0]._get_js_string()
+            let object = new Obj("DomElement",ElementProto,{})
+            object._make_js_slot('jsvalue',element)
             return object
         },
         'makeSpan:': (rec:Obj, args:Array<Obj>):Obj => {
             let element = document.createElement("span")
             element.innerText = args[0]._get_js_string()
-            let object = new Obj("domelement",ObjectProto,{})
+            let object = new Obj("DomElement",ElementProto,{})
             object._make_js_slot('jsvalue',element)
             return object
         },

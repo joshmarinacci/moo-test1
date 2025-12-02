@@ -10,6 +10,7 @@ import {StrObj} from "./string.ts";
 import {objsEqual} from "./debug.ts";
 
 const d = new JoshLogger()
+d.disable()
 
 export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') {
