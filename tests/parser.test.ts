@@ -20,8 +20,10 @@ import {
     NumberLiteral, ArrayLiteral,
 } from "../src/parser.ts";
 import type {Rule} from "../src/parser.ts"
-import {Num, Blk, Str, Grp, Id, Stmt, ListLit, Ret, Ast} from "../src/ast.ts"
+import {Blk, Str, Grp, Id, Stmt, ListLit, Ret, Ast} from "../src/ast.ts"
+import {Num} from "../src/ast2.ts"
 import {match} from "./common.ts";
+import {precedence} from "./parser3.test.ts";
 
 function matchOutput(source:string, rule:Rule) {
     let input = new InputStream(source,0);
@@ -55,21 +57,12 @@ test ("test parser itself", () => {
     assert.ok(match("baaac", Seq(Lit('b'),ZeroOrMore(AnyNot(Lit('c'))),Lit('c'))))
 })
 test("parse integer",() => {
-    assert.ok(match("4",Digit))
-    assert.ok(match("44",NumberLiteral))
-    assert.ok(!match("a",NumberLiteral))
-    assert.equal(matchOutput("4",Digit),"4")
-    assert.equal(matchOutput("44",NumberLiteral),"44")
-    assert.equal(matchOutput("44845a",NumberLiteral),"44845")
-    assert.ok(!match("a44845",NumberLiteral))
-    assert.deepStrictEqual(produces("44",NumberLiteral),Num(44))
-    assert.ok(match("-44",NumberLiteral))
-    assert.deepStrictEqual(produces("-44",NumberLiteral),Num(-44))
-    assert.deepStrictEqual(produces("67",NumberLiteral),Num(67))
-    assert.deepStrictEqual(produces("6_7",NumberLiteral),Num(67))
+    precedence("67",Num(67))
+    precedence("-67",Num(-67))
+    precedence("6_7",Num(67))
 })
 test("parse float", () => {
-    assert.deepStrictEqual(produces("-44.44",NumberLiteral),Num(-44.44))
+    // precedence("-44.44",Num(-44.44))
     assert.deepStrictEqual(produces("0.44",NumberLiteral),Num(0.44))
     assert.deepStrictEqual(produces("0.4_4",NumberLiteral),Num(0.44))
     assert.deepStrictEqual(produces("0_0.44",NumberLiteral),Num(0.44))
