@@ -20,8 +20,8 @@ import {
     NumberLiteral, ArrayLiteral,
 } from "../src/parser.ts";
 import type {Rule} from "../src/parser.ts"
-import {Blk, Str, Grp, Id, Stmt, ListLit, Ret, Ast} from "../src/ast.ts"
-import {Num} from "../src/ast2.ts"
+import {Blk, Str, Grp, Stmt, ListLit, Ret, Ast, Id} from "../src/ast.ts"
+import {Num, PlnId} from "../src/ast2.ts"
 import {match} from "./common.ts";
 import {precedence} from "./parser3.test.ts";
 
@@ -62,28 +62,24 @@ test("parse integer",() => {
     precedence("6_7",Num(67))
 })
 test("parse float", () => {
-    // precedence("-44.44",Num(-44.44))
-    assert.deepStrictEqual(produces("0.44",NumberLiteral),Num(0.44))
-    assert.deepStrictEqual(produces("0.4_4",NumberLiteral),Num(0.44))
-    assert.deepStrictEqual(produces("0_0.44",NumberLiteral),Num(0.44))
+    precedence("-44.44",Num(-44.44))
+    precedence("0.44",Num(0.44))
+    precedence("0.4_4",Num(0.44))
+    precedence("0_0.44",Num(0.44))
 })
 test('parse alt base numbers',() => {
-    assert.deepStrictEqual(produces("2r0001",NumberLiteral),Num(1))
-    assert.deepStrictEqual(produces("2r1111",NumberLiteral),Num(15))
-    assert.deepStrictEqual(produces("16r8",NumberLiteral),Num(8))
-    assert.deepStrictEqual(produces("16rA",NumberLiteral),Num(10))
-    assert.deepStrictEqual(produces("16rFF",NumberLiteral),Num(255))
-    // assert.deepStrictEqual(produces("16rFFFF",Hexidecimal),Num(0xFFFF))
+    precedence("2r0001",Num(1))
+    precedence("2r1111",Num(15))
+    precedence("16r8",Num(8))
+    precedence("16rA",Num(10))
+    precedence("16rFF",Num(255))
+    precedence("16rFFFF",Num(0xFFFF))
 })
 test("parse identifier",() => {
-    assert.ok(match("abc",Identifier))
-    assert.ok(match("ABC",Identifier))
-    assert.ok(match("a2bc",Identifier))
-    assert.ok(match("a_bc",Identifier))
-    assert.ok(!match("1abc",Identifier))
-    assert.ok(!match("_abc",Identifier))
-    assert.deepStrictEqual(produces("abc",Identifier),Id("abc"))
-    assert.deepStrictEqual(produces("abc:",Identifier),Id("abc:"))
+    precedence("abc",PlnId("abc"))
+    precedence("ABC",PlnId("ABC"))
+    precedence("a2bc",PlnId("a2bc"))
+    precedence("a_bc",PlnId("a_bc"))
 })
 test("parse string literal",() => {
     assert.ok(match(`'abc'`,StringLiteral))

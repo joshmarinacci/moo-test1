@@ -6,7 +6,7 @@ import type {Ast2, PlainId} from "./ast2.ts"
 export function parse(input:string):Ast2 {
     const mooGrammar = ohm.grammar(String.raw`
 Moo {
-  Exp         = Assignment | Keyword | Binary | Unary | Group | string | ident | number
+  Exp         = Assignment | Keyword | Binary | Unary | Group | string | ident | Number
   Assignment  = ident ":=" Exp
   Unary       = Exp ident
   Binary      = Exp Operator Exp
@@ -14,9 +14,14 @@ Moo {
   Group       = "(" Exp ")"
   
   Operator    = "+" | "*"
-  ident       = letter+ 
+  ident       = letter (letter|digit|"_")+ 
   kident      = letter+ ":"
-  number      = "-"? (digit | "_")+
+  Number      = num2 | num16 | float | integer
+  dig         = digit | "_"
+  num2        = "2r" ("0" | "1")+
+  num16       = "16r" (digit | "A" | "B" | "C" | "D" | "E" | "F")+
+  float        = "-"? dig+ "." dig+
+  integer      = "-"? dig+
   string      = "'" (~ "'" any) * "'"
 }
 `);
@@ -30,9 +35,15 @@ Moo {
         Assignment:(ident,_op,arg)=> Ass(ident.ast(), arg.ast()),
         Group:(_a, exp, _b)=> Grp(exp.ast()),
         Operator:(v) => SymId(v.sourceString),
-        ident:(name)=> PlnId(name.sourceString),
+        ident:(start,rest)=> PlnId(start.sourceString+rest.sourceString),
         kident:(a,b) => KeyId(a.sourceString + b.sourceString),
-        number:(sign,digits)=> Num(parseInt(sign.sourceString + digits.sourceString.replace('_', ''))),
+        float:(sign,prefix,dot,postfix) => Num(parseFloat(
+                (sign.sourceString +prefix.sourceString + dot.sourceString + postfix.sourceString)
+                .replace('_', '')
+        )),
+        integer:(sign,digits)=> Num(parseInt(sign.sourceString + digits.sourceString.replace('_', ''))),
+        num2:(prefx,digits) => Num(parseInt(digits.sourceString,2)),
+        num16:(prefx,digits) => Num(parseInt(digits.sourceString,16)),
         string:(_a,name,_b) => Str(name.sourceString)
     })
 
