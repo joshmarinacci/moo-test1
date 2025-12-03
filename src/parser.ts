@@ -315,6 +315,36 @@ RealExp = produce(
     Or(Return,ArrayLiteral, NumberLiteral,Identifier,Operator,StringLiteral,Group,Block)
     ,(res)=> res.production)
 
+const rawOpenParen = Lit("(")
+const OpenParen = ws(rawOpenParen)
+const rawCloseParen = Lit(")")
+const CloseParen = ws(rawCloseParen)
+const Underscore = Lit("_")
+const Alpha = Or(Range("a","z"),Range("A","Z"));
+const AlphaNumUnder = Or(Alpha, Digit, Underscore);
+const rawAssignOperator = Lit(":=")
+const AssignOperator = ws(rawAssignOperator)
+
+const rawPlainId = produce(Seq(Alpha, OneOrMore(AlphaNumUnder)),(res) => Id(res.slice))
+const PlainId = ws(rawPlainId)
+const rawSymbolId = produce(OneOrMore(SymbolLiteral),(res) => Id(res.slice))
+const SymbolID = ws(rawSymbolId)
+const rawKeywordID = produce(Seq(Alpha, OneOrMore(AlphaNumUnder), Colon), (res) => Id(res.slice))
+const KeywordID = ws(rawKeywordID)
+
+let SoloExp1 = Lit("dummy")
+
+const Simple = Or(SoloExp1, NumberLiteral, StringLiteral,PlainId)
+const Group2       = produce(Seq(OpenParen, Simple, CloseParen),(res) => Grp(res.production[1]))
+const UnarySend = produce(Or(Group2,Simple),(res) => res.production)
+const BinarySend = produce(Seq(SymbolID, Or(Group2,Simple)),(res) => res.production)
+const KeywordSend = produce(OneOrMore(Seq(KeywordID, Simple)), (res) => res.production)
+export const MessageSend = Seq(Or(Group2,Simple), Or(KeywordSend, BinarySend, UnarySend))
+const Assignment = produce(Seq(PlainId, AssignOperator, Or(Group2,MessageSend)),(res) => [res.production[0], res.production[2]])
+SoloExp1 = Or(Assignment, MessageSend, NumberLiteral, StringLiteral, PlainId)
+
+export const SoloExp3 =(input:InputStream) => SoloExp1(input)
+
 
 export function parseAst(source:string):Ast {
     let input = new InputStream(source.trim(),0);
