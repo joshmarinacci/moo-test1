@@ -21,7 +21,7 @@ import type {Ast2} from "./ast2.ts"
 export function parse(input:string):Ast2 {
     const mooGrammar = ohm.grammar(String.raw`
 Moo {
-  Exp         = Block | Statement | Assignment | Keyword | Binary | Unary | Group | String | ident | Number
+  Exp         = Statement | Assignment | Keyword | Binary | Unary | Group | Block | String | ident | Number
   Block = "[" BlockArgs? Statement* Exp? "]"
   BlockArgs   = ident* "|"
   Statement   = Exp "."

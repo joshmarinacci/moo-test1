@@ -13,7 +13,7 @@ export function make_standard_scope():Obj {
     setup_boolean(scope)
     setup_debug(scope)
     // setup_image(scope)
-    // setup_arrays(scope)
+    setup_arrays(scope)
 
     scope._make_method_slot("Global",scope)
     ObjectProto.parent = scope;

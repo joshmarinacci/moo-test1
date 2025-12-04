@@ -9,6 +9,8 @@ import {parse} from "./parser3.ts";
 import type {
     Ast2,
     BinaryCall,
+    BlockLiteral,
+    Group,
     KeywordCall,
     MessageCall,
     NumberLiteral,
@@ -142,49 +144,58 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
             return method(rec,[arg])
         }
     }
+    if(call.type === 'keyword-call') {
+        console.log('keyword call')
+        let method = rec.lookup_slot(call.args[0].name.name)
+        if (isNil(method)) {
+            throw new Error(`method is nil! could not find '${call.args[0].name.name}'`)
+        }
+        let arg = eval_ast(call.args[0].value,scope)
+        console.log('method is',method)
+        if (method instanceof Function) {
+            return method(rec,[arg])
+        }
+    }
 }
 
 export function eval_ast(ast:Ast2, scope:Obj):Obj {
     if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
     if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
     if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
-    if (ast.type === 'return') return SymRef("return")
+    // if (ast.type === 'return') return SymRef("return")
     if (ast.type === 'group') {
-        let group = ast as GroupAst;
-        d.indent()
-        let objs = group.value.map(a => eval_ast(a,scope))
-        let ret = send_message(objs,scope)
-        d.outdent()
-        return ret
+        let group = ast as Group
+        let objs = group.body.map(a => eval_ast(a,scope))
+        return send_message(objs, scope)
     }
     if (ast.type === 'statement') {
         let stmt = ast as Statement;
         return eval_ast(stmt.value, scope)
     }
-    if (ast.type === 'block') {
-        let blk = ast as BlockAst;
+    if (ast.type === 'block-literal') {
+        let blk = ast as BlockLiteral
         let blk2 = BlockProto.clone()
         blk2.name = 'Block'
-        blk2._make_js_slot('args',blk.args);
+        blk2._make_js_slot('args',blk.parameters);
         blk2._make_js_slot('body',blk.body);
         blk2.parent = scope;
         return blk2
     }
-    if (ast.type === 'array-literal') {
-        let list = ast as ListLiteralAst
-        let vals = list.value.map(v => eval_ast(v,scope))
-        return ListObj(...vals)
-    }
-    if (ast.type === 'array-literal-map') {
-        let map = ast as MapLiteralAst
-        let obj:Record<string, Obj> = {}
-        map.value.forEach(pair => {
-            let key = pair[0] as IdAst
-            let value = pair[1]
-            obj[key.value] = eval_ast(value,scope)
-        })
-        return DictObj(obj)
-    }
+    // if (ast.type === 'array-literal') {
+    //     let list = ast as ListLiteralAst
+    //     let vals = list.value.map(v => eval_ast(v,scope))
+    //     return ListObj(...vals)
+    // }
+    // if (ast.type === 'array-literal-map') {
+    //     let map = ast as MapLiteralAst
+    //     let obj:Record<string, Obj> = {}
+    //     map.value.forEach(pair => {
+    //         let key = pair[0] as IdAst
+    //         let value = pair[1]
+    //         obj[key.value] = eval_ast(value,scope)
+    //     })
+    //     return DictObj(obj)
+    // }
     if (ast.type === 'message-call') {
         let msg = ast as MessageCall
         console.log('message call', msg)

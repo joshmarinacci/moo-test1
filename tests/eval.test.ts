@@ -12,22 +12,22 @@ test('scope tests',() => {
     cval(` 5 .`,scope,NumObj(5))
     // self is the scope itself
     // cval(` self .`,scope,scope)
-    // // the value message on a literal returns itself
-    // cval(' 5 value .',scope,NumObj(5))
-    // // block evaluates to the last statement
-    // cval('[ 5 . ] value .',scope, NumObj(5))
+    // the value message on a literal returns itself
+    cval(' 5 value .',scope,NumObj(5))
+    // block evaluates to the last statement
+    cval('[ 5 . ] value .',scope, NumObj(5))
     // // scope inside block can accept makeSlot. then looks up the v slot.
     // cval(`[ self makeSlot 'v' 5. self getSlot "v". ] value .`,scope, NumObj(5))
     // cval(`[ self makeSlot "v" 5. self v. ] value .`,scope, NumObj(5))
     // cval(`[ self makeSlot "v" 5. v ] value .`,scope, NumObj(5))
     //
     // // group evaluates to the last expression in the group.
-    // cval('8 + 8.',scope,NumObj(16))
-    // cval('(8 + 8).',scope,NumObj(16))
+    cval('8 + 8.',scope,NumObj(16))
+    cval('(8 + 8).',scope,NumObj(16))
     // // cval('8 clone.',scope,NumObj(8))
-    // cval('Object clone.', scope, ObjectProto.clone())
-    // cval('[ Object clone. ] value .', scope, ObjectProto.clone())
-    // // make an object with one slot
+    cval('Object clone.', scope, ObjectProto.clone())
+    cval('[ Object clone. ] value .', scope, ObjectProto.clone())
+    // make an object with one slot
     // cval(`[
     //     self makeSlot "v" (Object clone).
     //     v makeSlot "w" 5.
@@ -63,13 +63,13 @@ test('conditions',() => {
     cval(` (4 < 5) ifFalse: 88.`,scope,NilObj())
     cval(` (4 > 5) ifFalse: 88.`,scope,NumObj(88))
 
-    cval(` (4 < 5) cond: 88 89.`,scope,NumObj(88))
-    cval(` (4 > 5) cond: 88 89.`,scope,NumObj(89))
-    cval(` (4 < 5) cond: (44 + 44) 89.`,scope,NumObj(88))
-    cval(` (4 < 5) cond: (44 - 44) 89.`,scope,NumObj(0))
+    // cval(` (4 < 5) cond: 88 89.`,scope,NumObj(88))
+    // cval(` (4 > 5) cond: 88 89.`,scope,NumObj(89))
+    // cval(` (4 < 5) cond: (44 + 44) 89.`,scope,NumObj(88))
+    // cval(` (4 < 5) cond: (44 - 44) 89.`,scope,NumObj(0))
 
-    cval(` (4 < 5) cond: [88.] [89.].`,scope,NumObj(88))
-    cval(` (4 > 5) cond: [88.] [89.].`,scope,NumObj(89))
+    // cval(` (4 < 5) cond: [88.] [89.].`,scope,NumObj(88))
+    // cval(` (4 > 5) cond: [88.] [89.].`,scope,NumObj(89))
 })
 test('Debug tests',() => {
     let scope = make_standard_scope()

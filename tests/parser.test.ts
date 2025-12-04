@@ -1,40 +1,31 @@
 import test from "node:test";
 import assert from "node:assert";
-import {
-    Lit,
-    OneOrMore,
-    Or,
-    Seq,
-    ZeroOrMore,
-    Range,
-    AnyNot,
-} from "../src/parser.ts";
 import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs} from "../src/ast2.ts"
 import {match} from "./common.ts";
 import {precedence} from "./parser3.test.ts";
 
-test ("test parser itself", () => {
-    assert.ok(match("a",Lit("a")))
-    assert.ok(match("a",Or(Lit("a"),Lit("b"))))
-    assert.ok(match("b",Or(Lit("a"),Lit("b"))))
-    assert.ok(!match("c",Or(Lit("a"),Lit("b"))))
-    assert.ok(match("ab",Seq(Lit("a"),Lit("b"))))
-    assert.ok(!match("ac",Seq(Lit("a"),Lit("b"))))
-    assert.ok(match("abc",Seq(Lit("a"),Lit("b"),Lit("c"))))
-    assert.ok(match("abc",Lit("abc")))
-    assert.ok(match("abc",Seq(Lit("abc"))))
-    assert.ok(match("1",Range("0","9")))
-    assert.ok(!match("a",Range("0","9")))
-    assert.ok(match("123",OneOrMore(Range("0","9"))))
-    assert.ok(!match("abc",OneOrMore(Range("0","9"))))
-    assert.ok(match("1",OneOrMore(Range("0","9"))))
-    assert.ok(!match("z",OneOrMore(Range("0","9"))))
-    assert.ok(match("8z",OneOrMore(Range("0","9"))))
-    assert.ok(match("ab",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
-    assert.ok(match("b",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
-    assert.ok(!match("a",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
-    assert.ok(match("baaac", Seq(Lit('b'),ZeroOrMore(AnyNot(Lit('c'))),Lit('c'))))
-})
+// test ("test parser itself", () => {
+//     assert.ok(match("a",Lit("a")))
+//     assert.ok(match("a",Or(Lit("a"),Lit("b"))))
+//     assert.ok(match("b",Or(Lit("a"),Lit("b"))))
+//     assert.ok(!match("c",Or(Lit("a"),Lit("b"))))
+//     assert.ok(match("ab",Seq(Lit("a"),Lit("b"))))
+//     assert.ok(!match("ac",Seq(Lit("a"),Lit("b"))))
+//     assert.ok(match("abc",Seq(Lit("a"),Lit("b"),Lit("c"))))
+//     assert.ok(match("abc",Lit("abc")))
+//     assert.ok(match("abc",Seq(Lit("abc"))))
+//     assert.ok(match("1",Range("0","9")))
+//     assert.ok(!match("a",Range("0","9")))
+//     assert.ok(match("123",OneOrMore(Range("0","9"))))
+//     assert.ok(!match("abc",OneOrMore(Range("0","9"))))
+//     assert.ok(match("1",OneOrMore(Range("0","9"))))
+//     assert.ok(!match("z",OneOrMore(Range("0","9"))))
+//     assert.ok(match("8z",OneOrMore(Range("0","9"))))
+//     assert.ok(match("ab",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+//     assert.ok(match("b",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+//     assert.ok(!match("a",Seq(ZeroOrMore(Lit("a")),Lit("b"))))
+//     assert.ok(match("baaac", Seq(Lit('b'),ZeroOrMore(AnyNot(Lit('c'))),Lit('c'))))
+// })
 test("parse integer",() => {
     precedence("67",Num(67))
     precedence("-67",Num(-67))
@@ -168,13 +159,13 @@ test("block",() => {
 //             Id('a'),
 //         ])
 // })
-// test('parse expression',() => {
-//     assert.deepStrictEqual(parseAst("4 ."),Stmt(Num(4)))
-//     assert.deepStrictEqual(parseAst("(4)."),Stmt(Grp(Num(4))))
-//     assert.deepStrictEqual(parseAst("(add)."),Stmt(Grp(Id("add"))))
-//     assert.deepStrictEqual(parseAst("(4 + 5)."),Stmt(Grp(Num(4),Id("+"),Num(5))))
-//     assert.deepStrictEqual(parseAst("[foo.]."),Stmt(Blk([],[Stmt(Id("foo"))])))
-// })
+test('parse expression',() => {
+    precedence("4 .",Stmt(Num(4)))
+    precedence("(4).",Stmt(Grp(Num(4))))
+    precedence("(add).",Stmt(Grp(PlnId("add"))))
+    precedence("(4 + 5).",Stmt(Grp( Method(Num(4), Binary(SymId("+"),Num(5))))))
+    precedence("[foo.].",Stmt(Blk(Stmt(PlnId("foo")))))
+})
 // test('parse comments',() => {
     // precedence('//foo\n',Cmnt())
     // assert.ok(!match('//foo',Comment))

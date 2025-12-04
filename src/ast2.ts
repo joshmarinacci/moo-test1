@@ -10,10 +10,10 @@ export type KeywordCall = { type: 'keyword-call', args: Array<KeywordArgument> }
 
 export type MessageCall = { type: 'message-call', receiver: Ast2, call:UnaryCall | BinaryCall | KeywordCall}
 
-type Group = { type: 'group', body: Array<Ast2> }
-type Assignment = { type: 'assignment', target: PlainId, value: Ast2 }
+export type Group = { type: 'group', body: Array<Ast2> }
+export type Assignment = { type: 'assignment', target: PlainId, value: Ast2 }
 export type Statement = { type: 'statement', value: Ast2}
-type BlockLiteral = { type: 'block', parameters: Array<PlainId>, body: Array<Statement>}
+export type BlockLiteral = { type: 'block-literal', parameters: Array<PlainId>, body: Array<Statement>}
 
 export type Ast2 = NumberLiteral | StringLiteral | PlainId | SymbolId | KeywordId
     | UnaryCall | BinaryCall | KeywordCall | MessageCall | KeywordArgument
@@ -33,6 +33,6 @@ export const KArg = (name:KeywordId,value:Ast2):KeywordArgument => ({type:"keywo
 export const Method = (receiver:Ast2, call:UnaryCall|BinaryCall|KeywordCall):MessageCall => ({type:"message-call",receiver,call})
 export const Ass = (target:PlainId, value:Ast2):Assignment => ({type:"assignment",target, value})
 export const Stmt = (value:Ast2):Statement => ({type:"statement", value})
-export const Blk = (...body:Array<Statement>):BlockLiteral => ({type:"block", body, parameters:[] })
-export const BlkArgs = (parameters:Array<PlainId>, body:Array<Statement>):BlockLiteral => ({type:'block',  parameters, body})
+export const Blk = (...body:Array<Statement>):BlockLiteral => ({type:"block-literal", body, parameters:[] })
+export const BlkArgs = (parameters:Array<PlainId>, body:Array<Statement>):BlockLiteral => ({type:'block-literal',  parameters, body})
 
