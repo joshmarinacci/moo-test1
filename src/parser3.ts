@@ -51,19 +51,9 @@ Moo {
 
     const semantics = mooGrammar.createSemantics()
     semantics.addOperation<Ast2>("ast",{
-        BlockArgs:(args,_bar) => {
-            // console.log("block args are",args.children.map(ch => ch.ast()))
-            return args.children.map(ch => ch.ast())
-        },
         _iter: (...children) => children.map(ch => ch.ast()),
-        Block:(_a, args,body, exp,_b) => {
-            // console.log('args are',args.isOptional(), args.ast())
-            // console.log("the body is",body.children)
-            // console.log("extra exp is",exp.isOptional())
-            return BlkArgs(
-                args.ast().flat(),
-                body.children.map(ch => ch.ast()))
-        },
+        BlockArgs:(args,_bar) => args.children.map(ch => ch.ast()),
+        Block:(_a, args,body, exp,_b) => BlkArgs(args.ast().flat(), body.children.map(ch => ch.ast())),
         Statement:(value,_period) => Stmt(value.ast()),
         Unary:(receiver, method)=> Method(receiver.ast(), Unary(method.ast())),
         Binary:(receiver,op,arg)=> Method(receiver.ast(), Binary(op.ast(), arg.ast())),
@@ -78,14 +68,12 @@ Moo {
                 .replace('_', '')
         )),
         integer:(sign,digits)=> Num(parseInt(sign.sourceString + digits.sourceString.replace('_', ''))),
-        num2:(prefx,digits) => Num(parseInt(digits.sourceString,2)),
-        num16:(prefx,digits) => Num(parseInt(digits.sourceString,16)),
+        num2:(_p,digits) => Num(parseInt(digits.sourceString,2)),
+        num16:(_p,digits) => Num(parseInt(digits.sourceString,16)),
         qstr:(_a,name,_b) => Str(name.sourceString),
         qqstr:(_a,name,_b) => Str(name.sourceString),
     })
 
-
-    // const userInput = 'Hello';
     const m = mooGrammar.match(input);
     if (m.succeeded()) {
         return semantics(m).ast()

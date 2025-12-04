@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
 import {
-    InputStream,
     Lit,
     OneOrMore,
     Or,
@@ -9,21 +8,10 @@ import {
     ZeroOrMore,
     Range,
     AnyNot,
-    ArrayLiteral,
 } from "../src/parser.ts";
-import type {Rule} from "../src/parser.ts"
 import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs} from "../src/ast2.ts"
 import {match} from "./common.ts";
 import {precedence} from "./parser3.test.ts";
-
-function matchOutput(source:string, rule:Rule) {
-    let input = new InputStream(source,0);
-    return rule(input).slice
-}
-function produces(source:string, rule:Rule) {
-    let input = new InputStream(source,0);
-    return rule(input).ast
-}
 
 test ("test parser itself", () => {
     assert.ok(match("a",Lit("a")))
@@ -91,31 +79,6 @@ test("parse operators",() => {
     precedence("4 == 5",Method(Num(4),Binary(SymId('=='),Num(5))))
     precedence("4 != 5",Method(Num(4),Binary(SymId('!='),Num(5))))
 })
-// test("parse array list literals",() => {
-//     assert.ok(match("{}",ArrayLiteral))
-//     assert.deepStrictEqual(produces("{}",ArrayLiteral),ListLit())
-//     assert.ok(match("{1}",ArrayLiteral))
-//     assert.deepStrictEqual(produces("{1}",ArrayLiteral),ListLit(Num(1)))
-//     assert.ok(match("{ 1 }",ArrayLiteral))
-//     assert.ok(match("{ }",ArrayLiteral))
-//     assert.ok(match("{ 4 }",ArrayLiteral))
-//     assert.ok(match("{ 4 5 }",ArrayLiteral))
-//     assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
-//     assert.ok(match("{ 4, 5 }",ArrayLiteral))
-//     assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
-//     assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
-//     assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ListLit(Num(4),Num(5),Num(6)))
-//     assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ListLit(Num(4),Num(5),Num(6))))
-// })
-
-test('parse array dict literals',() => {
-    assert.ok(match("{}",ArrayLiteral))
-    assert.ok(match("{a:5}",ArrayLiteral))
-    assert.ok(match("{ a:5 }",ArrayLiteral))
-    assert.ok(match("{ a:5 b:5 }",ArrayLiteral))
-    assert.ok(match("{ abc:5 def:8 }",ArrayLiteral))
-})
-
 test("handle whitespace",() => {
     precedence("4",Num(4))
     precedence("4 ",Num(4))
@@ -132,7 +95,6 @@ test("parse group",() => {
     precedence("( ( id ) )",Grp(Grp(PlnId('id'))))
     precedence("( 4 add )",Grp(Method(Num(4),Unary(PlnId('add')))))
 })
-
 test("parse statement",() => {
     // assert.ok(match(".",Statement))
     // assert.deepStrictEqual(produces(".",Statement),Stmt())
@@ -156,6 +118,42 @@ test("parse statement",() => {
     // assert.ok(match("^ 67 .",Statement))
     // assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
 })
+test("block",() => {
+    precedence("[]",Blk())
+    // precedence("[foo]",Blk(Stmt(PlnId('foo'))))
+    precedence("[foo.]",Blk(Stmt(PlnId('foo'))))
+    precedence("[foo. bar.]",Blk(Stmt(PlnId("foo")),Stmt(PlnId("bar"))))
+
+    precedence("[x| ]", BlkArgs([PlnId('x')],[]))
+    precedence("[ x| ]", BlkArgs([PlnId('x')],[]))
+    precedence("[ x y | ]", BlkArgs([PlnId('x'), PlnId('y')],[]))
+    precedence("[ | ]", BlkArgs([],[]))
+    precedence("[x| 4. ]", BlkArgs([PlnId('x')],[Stmt(Num(4))]))
+})
+
+// test("parse array list literals",() => {
+//     assert.ok(match("{}",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{}",ArrayLiteral),ListLit())
+//     assert.ok(match("{1}",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{1}",ArrayLiteral),ListLit(Num(1)))
+//     assert.ok(match("{ 1 }",ArrayLiteral))
+//     assert.ok(match("{ }",ArrayLiteral))
+//     assert.ok(match("{ 4 }",ArrayLiteral))
+//     assert.ok(match("{ 4 5 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
+//     assert.ok(match("{ 4, 5 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
+//     assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ListLit(Num(4),Num(5),Num(6)))
+//     assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ListLit(Num(4),Num(5),Num(6))))
+// })
+// test('parse array dict literals',() => {
+//     assert.ok(match("{}",ArrayLiteral))
+//     assert.ok(match("{a:5}",ArrayLiteral))
+//     assert.ok(match("{ a:5 }",ArrayLiteral))
+//     assert.ok(match("{ a:5 b:5 }",ArrayLiteral))
+//     assert.ok(match("{ abc:5 def:8 }",ArrayLiteral))
+// })
 // test("parse block body", () => {
 //     // two statements
 //     assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
@@ -170,18 +168,6 @@ test("parse statement",() => {
 //             Id('a'),
 //         ])
 // })
-test("block",() => {
-    precedence("[]",Blk())
-    // precedence("[foo]",Blk(Stmt(PlnId('foo'))))
-    precedence("[foo.]",Blk(Stmt(PlnId('foo'))))
-    precedence("[foo. bar.]",Blk(Stmt(PlnId("foo")),Stmt(PlnId("bar"))))
-
-    precedence("[x| ]", BlkArgs([PlnId('x')],[]))
-    precedence("[ x| ]", BlkArgs([PlnId('x')],[]))
-    precedence("[ x y | ]", BlkArgs([PlnId('x'), PlnId('y')],[]))
-    precedence("[ | ]", BlkArgs([],[]))
-    precedence("[x| 4. ]", BlkArgs([PlnId('x')],[Stmt(Num(4))]))
-})
 // test('parse expression',() => {
 //     assert.deepStrictEqual(parseAst("4 ."),Stmt(Num(4)))
 //     assert.deepStrictEqual(parseAst("(4)."),Stmt(Grp(Num(4))))
@@ -189,13 +175,12 @@ test("block",() => {
 //     assert.deepStrictEqual(parseAst("(4 + 5)."),Stmt(Grp(Num(4),Id("+"),Num(5))))
 //     assert.deepStrictEqual(parseAst("[foo.]."),Stmt(Blk([],[Stmt(Id("foo"))])))
 // })
-test('parse comments',() => {
+// test('parse comments',() => {
     // precedence('//foo\n',Cmnt())
     // assert.ok(!match('//foo',Comment))
     // assert.ok(!match('a//foo\n',Comment))
     // assert.ok(!match('a//foo',Comment))
-
-    // assert.deepStrictEqual(parseBlockBody("4 add 5."),[
+// assert.deepStrictEqual(parseBlockBody("4 add 5."),[
     //     Stmt(Num(4),Id('add'),Num(5)),
     // ])
     // assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
@@ -207,9 +192,7 @@ test('parse comments',() => {
     // assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
     //     Stmt(Num(4),Id('add'),Num(5)),
     // ])
-})
-
-
+// })
 // test('parse JS method call syntax', () => {
 //     // assert.ok(match("a",Identifier))
 //     // assert.deepStrictEqual(produces("a",Exp),Id('a'))
