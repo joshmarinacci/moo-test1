@@ -8,7 +8,8 @@ import {objsEqual} from "./debug.ts";
 import {parse} from "./parser3.ts";
 import type {
     Ast2,
-    BinaryCall, KeywordCall,
+    BinaryCall,
+    KeywordCall,
     MessageCall,
     NumberLiteral,
     PlainId,
@@ -123,12 +124,18 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
     if(call.type === 'unary-call') {
         let method = rec.lookup_slot(call.message.name)
         console.log('method is',method)
+        if (isNil(method)) {
+            throw new Error(`method is nil! could not find '${call.message.name}'`)
+        }
         if (method instanceof Function) {
             return method(rec,[])
         }
     }
     if(call.type === 'binary-call') {
         let method = rec.lookup_slot(call.operator.name)
+        if (isNil(method)) {
+            throw new Error(`method is nil! could not find '${call.operator.name}'`)
+        }
         let arg = eval_ast(call.argument,scope)
         console.log('method is',method)
         if (method instanceof Function) {
@@ -152,13 +159,7 @@ export function eval_ast(ast:Ast2, scope:Obj):Obj {
     }
     if (ast.type === 'statement') {
         let stmt = ast as Statement;
-        d.indent()
-        // console.log("statement", stmt)
-        // let objs = stmt.value.map(a => eval_ast(a,scope))
-        // let ret = send_message(objs,scope)
-        let ret = eval_ast(stmt.value,scope)
-        d.outdent()
-        return ret
+        return eval_ast(stmt.value, scope)
     }
     if (ast.type === 'block') {
         let blk = ast as BlockAst;
