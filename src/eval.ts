@@ -168,7 +168,9 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
 export function eval_ast(ast:Ast2, scope:Obj):Obj {
     if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
     if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
-    if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
+    // if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
+    if (ast.type === 'plain-identifier') return scope.lookup_slot(ast.name)
+
     // if (ast.type === 'return') return SymRef("return")
     if (ast.type === 'group') {
         let group = ast as Group
