@@ -1,13 +1,21 @@
 import {JoshLogger} from "./util.ts";
-import {parseBlockBody} from "./parser.ts";
 
-import {Ast, BlockAst, GroupAst, IdAst, ListLiteralAst, MapLiteralAst, NumAst, StmtAst, StrAst} from "./ast.ts"
-// import assert from "node:assert";
 import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {DictObj, ListObj} from "./arrays.ts";
 import {NumObj} from "./number.ts";
 import {StrObj} from "./string.ts";
 import {objsEqual} from "./debug.ts";
+import {parse} from "./parser3.ts";
+import type {
+    Ast2,
+    BinaryCall, KeywordCall,
+    MessageCall,
+    NumberLiteral,
+    PlainId,
+    Statement,
+    StringLiteral,
+    UnaryCall
+} from "./ast2.ts";
 
 const d = new JoshLogger()
 d.disable()
@@ -109,10 +117,30 @@ function send_message(objs: Obj[], scope: Obj):Obj {
     }
     throw new Error("invalid method")
 }
-export function eval_ast(ast:Ast, scope:Obj):Obj {
-    if (ast.type === 'num') return NumObj((ast as NumAst).value)
-    if (ast.type === "str") return StrObj((ast as StrAst).value)
-    if (ast.type === 'id') return SymRef((ast as IdAst).value)
+
+function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
+    console.log("doing call",call.type)
+    if(call.type === 'unary-call') {
+        let method = rec.lookup_slot(call.message.name)
+        console.log('method is',method)
+        if (method instanceof Function) {
+            return method(rec,[])
+        }
+    }
+    if(call.type === 'binary-call') {
+        let method = rec.lookup_slot(call.operator.name)
+        let arg = eval_ast(call.argument,scope)
+        console.log('method is',method)
+        if (method instanceof Function) {
+            return method(rec,[arg])
+        }
+    }
+}
+
+export function eval_ast(ast:Ast2, scope:Obj):Obj {
+    if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
+    if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
+    if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
     if (ast.type === 'return') return SymRef("return")
     if (ast.type === 'group') {
         let group = ast as GroupAst;
@@ -122,11 +150,13 @@ export function eval_ast(ast:Ast, scope:Obj):Obj {
         d.outdent()
         return ret
     }
-    if (ast.type === 'stmt') {
-        let stmt = ast as StmtAst;
+    if (ast.type === 'statement') {
+        let stmt = ast as Statement;
         d.indent()
-        let objs = stmt.value.map(a => eval_ast(a,scope))
-        let ret = send_message(objs,scope)
+        // console.log("statement", stmt)
+        // let objs = stmt.value.map(a => eval_ast(a,scope))
+        // let ret = send_message(objs,scope)
+        let ret = eval_ast(stmt.value,scope)
         d.outdent()
         return ret
     }
@@ -154,8 +184,13 @@ export function eval_ast(ast:Ast, scope:Obj):Obj {
         })
         return DictObj(obj)
     }
-    console.error("unknown ast type",ast)
-    throw new Error(`unknown ast type ${ast.type}`)
+    if (ast.type === 'message-call') {
+        let msg = ast as MessageCall
+        console.log('message call', msg)
+        let rec = eval_ast(msg.receiver,scope)
+        return perform_call(rec,msg.call,scope)
+    }
+    throw new Error(`unknown ast type '${ast.type}'`)
 }
 
 
@@ -204,7 +239,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
     d.disable()
     d.p('=========')
     d.p(`code is '${code}'`)
-    let body = parseBlockBody(code);
+    let body = parse(code);
     d.p('ast is',body.toString())
     let last = NilObj()
     if (Array.isArray(body)) {
@@ -213,7 +248,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
             if (!last) last = NilObj()
         }
     } else {
-        last = eval_ast(body as Ast, scope);
+        last = eval_ast(body as Ast2, scope);
     }
     if (last._is_return) last = last.get_slot('value') as Obj;
     d.p("returned", last.print())

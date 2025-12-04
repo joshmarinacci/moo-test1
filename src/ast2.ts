@@ -1,18 +1,18 @@
-type NumberLiteral = { type:'number-literal', value:number }
-type StringLiteral = { type: 'string-literal', value:string }
+export type NumberLiteral = { type:'number-literal', value:number }
+export type StringLiteral = { type: 'string-literal', value:string }
 export type PlainId = { type: 'plain-identifier', name:string }
 export type SymbolId = { type: 'symbol-identifier', name:string }
-type KeywordId = { type: 'keyword-id', name:string}
-type UnaryCall  = { type: 'unary-call',  message:PlainId   }
-type BinaryCall = { type: 'binary-call', operator:SymbolId, argument:Ast2 }
+export type KeywordId = { type: 'keyword-id', name:string}
+export type UnaryCall  = { type: 'unary-call',  message:PlainId   }
+export type BinaryCall = { type: 'binary-call', operator:SymbolId, argument:Ast2 }
 export type KeywordArgument = {type: 'keyword-argument', name: KeywordId, value: Ast2}
-type KeywordCall = { type: 'keyword-call', args: Array<KeywordArgument> }
+export type KeywordCall = { type: 'keyword-call', args: Array<KeywordArgument> }
 
-type MessageCall = { type: 'message-call', receiver: Ast2, call:UnaryCall | BinaryCall | KeywordCall}
+export type MessageCall = { type: 'message-call', receiver: Ast2, call:UnaryCall | BinaryCall | KeywordCall}
 
 type Group = { type: 'group', body: Array<Ast2> }
 type Assignment = { type: 'assignment', target: PlainId, value: Ast2 }
-type Statement = { type: 'statement', value: Ast2}
+export type Statement = { type: 'statement', value: Ast2}
 type BlockLiteral = { type: 'block', parameters: Array<PlainId>, body: Array<Statement>}
 
 export type Ast2 = NumberLiteral | StringLiteral | PlainId | SymbolId | KeywordId
