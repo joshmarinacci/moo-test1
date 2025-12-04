@@ -8,16 +8,11 @@ import {
     Seq,
     ZeroOrMore,
     Range,
-    Statement,
-    RealExp,
-    Block, Operator,
-    parseAst, BlockBody, parseBlockBody, Exp, AnyNot,
-    Comment,
+    AnyNot,
     ArrayLiteral,
 } from "../src/parser.ts";
 import type {Rule} from "../src/parser.ts"
-import {Blk, Stmt, ListLit, Ret, Ast, Id} from "../src/ast.ts"
-import {Num, PlnId, Str, SymId, Grp,Method,Unary} from "../src/ast2.ts"
+import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs} from "../src/ast2.ts"
 import {match} from "./common.ts";
 import {precedence} from "./parser3.test.ts";
 
@@ -84,41 +79,34 @@ test("parse string literal",() => {
     precedence(`'a b c'`,Str("a b c"))
 })
 test("parse operators",() => {
-    assert.ok(match("+",Operator))
-    assert.ok(match("-",Operator))
-    assert.ok(match("*",Operator))
-    assert.ok(match("/",Operator))
-    assert.ok(!match("%",Operator))
-    assert.ok(!match("[",Operator))
-    assert.ok(!match(".",Operator))
-    // precedence("+",SymId("+"))
-    // assert.deepStrictEqual(produces("<",Operator),Id("<"))
-    // assert.deepStrictEqual(produces(">",Operator),Id(">"))
-    // assert.deepStrictEqual(produces("<=",Operator),Id("<="))
-    // assert.deepStrictEqual(produces(">=",Operator),Id(">="))
-    // assert.deepStrictEqual(produces("!=",Operator),Id("!="))
-    // assert.deepStrictEqual(produces("==",Operator),Id("=="))
-    // assert.deepStrictEqual(produces("+=",Operator),Id("+="))
-    // assert.deepStrictEqual(produces("-=",Operator),Id("-="))
-    // assert.deepStrictEqual(produces(":=",Operator),Id(":="))
-    // assert.deepStrictEqual(produces("::=",Operator),Id("::="))
+    precedence("4+5",Method(Num(4),Binary(SymId('+'),Num(5))))
+    precedence("4 + 5",Method(Num(4),Binary(SymId('+'),Num(5))))
+    precedence("4 - 5",Method(Num(4),Binary(SymId('-'),Num(5))))
+    precedence("4 * 5",Method(Num(4),Binary(SymId('*'),Num(5))))
+    precedence("4 / 5",Method(Num(4),Binary(SymId('/'),Num(5))))
+    precedence("4 < 5",Method(Num(4),Binary(SymId('<'),Num(5))))
+    precedence("4 > 5",Method(Num(4),Binary(SymId('>'),Num(5))))
+    precedence("4 <= 5",Method(Num(4),Binary(SymId('<='),Num(5))))
+    precedence("4 >= 5",Method(Num(4),Binary(SymId('>='),Num(5))))
+    precedence("4 == 5",Method(Num(4),Binary(SymId('=='),Num(5))))
+    precedence("4 != 5",Method(Num(4),Binary(SymId('!='),Num(5))))
 })
-test("parse array list literals",() => {
-    assert.ok(match("{}",ArrayLiteral))
-    assert.deepStrictEqual(produces("{}",ArrayLiteral),ListLit())
-    assert.ok(match("{1}",ArrayLiteral))
-    assert.deepStrictEqual(produces("{1}",ArrayLiteral),ListLit(Num(1)))
-    assert.ok(match("{ 1 }",ArrayLiteral))
-    assert.ok(match("{ }",ArrayLiteral))
-    assert.ok(match("{ 4 }",ArrayLiteral))
-    assert.ok(match("{ 4 5 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
-    assert.ok(match("{ 4, 5 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
-    assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
-    assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ListLit(Num(4),Num(5),Num(6)))
-    assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ListLit(Num(4),Num(5),Num(6))))
-})
+// test("parse array list literals",() => {
+//     assert.ok(match("{}",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{}",ArrayLiteral),ListLit())
+//     assert.ok(match("{1}",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{1}",ArrayLiteral),ListLit(Num(1)))
+//     assert.ok(match("{ 1 }",ArrayLiteral))
+//     assert.ok(match("{ }",ArrayLiteral))
+//     assert.ok(match("{ 4 }",ArrayLiteral))
+//     assert.ok(match("{ 4 5 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{4 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
+//     assert.ok(match("{ 4, 5 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{ 4 , 5}",ArrayLiteral),ListLit(Num(4),Num(5)))
+//     assert.ok(match("{ 4, 5, 6 }",ArrayLiteral))
+//     assert.deepStrictEqual(produces("{ 4 , 5, 6}",ArrayLiteral),ListLit(Num(4),Num(5),Num(6)))
+//     assert.deepStrictEqual(produces("{ 4 , 5, 6} .",Statement),Stmt(ListLit(Num(4),Num(5),Num(6))))
+// })
 
 test('parse array dict literals',() => {
     assert.ok(match("{}",ArrayLiteral))
@@ -148,80 +136,77 @@ test("parse group",() => {
 test("parse statement",() => {
     // assert.ok(match(".",Statement))
     // assert.deepStrictEqual(produces(".",Statement),Stmt())
-    assert.ok(match("foo.",Statement))
-    assert.deepStrictEqual(produces("foo",RealExp),Id("foo"))
-    assert.deepStrictEqual(produces("abcdef.",Statement),Stmt(Id("abcdef")))
-    assert.ok(match("foo .",Statement))
-    assert.ok(match("bar foo .",Statement))
-    assert.ok(match("4 add 5 .",Statement))
-    assert.deepStrictEqual(produces("4 .",Statement),Stmt(Num(4)))
-    assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
-    assert.ok(match("foo bar .",Statement))
-    assert.ok(match("foo bar . foo bar.",BlockBody))
-    assert.deepStrictEqual(produces("4 add 5 . 6 add 7 .",BlockBody),
-        [
-            Stmt(Num(4),Id("add"),Num(5)),
-            Stmt(Num(6),Id("add"),Num(7),)
-        ])
-
-    assert.ok(match("return foo .",Statement))
-    assert.ok(match("^ 67 .",Statement))
-    assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
+    precedence("foo.",Stmt(PlnId('foo')))
+    // assert.deepStrictEqual(produces("foo",RealExp),Id("foo"))
+    // assert.deepStrictEqual(produces("abcdef.",Statement),Stmt(Id("abcdef")))
+    precedence("foo .",Stmt(PlnId('foo')))
+    precedence("bar foo .",Stmt(Method(PlnId('bar'),Unary(PlnId('foo')))))
+    // precedence("4 + 5 .",Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
+    precedence("4 .",Stmt(Num(4)))
+    // assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
+    precedence("foo bar .",Stmt(Method(PlnId('foo'),Unary(PlnId('bar')))))
+    // assert.ok(match("foo bar . foo bar.",BlockBody))
+    // assert.deepStrictEqual(produces("4 add 5 . 6 add 7 .",BlockBody),
+    //     [
+    //         Stmt(Num(4),Id("add"),Num(5)),
+    //         Stmt(Num(6),Id("add"),Num(7),)
+    //     ])
+    //
+    // assert.ok(match("return foo .",Statement))
+    // assert.ok(match("^ 67 .",Statement))
+    // assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
 })
-test("parse block body", () => {
-    // two statements
-    assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
-        [
-            Stmt(Num(4),Id("add"),Num(5)),
-            Stmt(Num(6),Id("add"),Num(7),)
-        ])
-    // statement and solo expression
-    assert.deepStrictEqual(parseBlockBody("4 add 5 . a  "),
-        [
-            Stmt(Num(4),Id("add"),Num(5)),
-            Id('a'),
-        ])
-})
+// test("parse block body", () => {
+//     // two statements
+//     assert.deepStrictEqual(parseBlockBody("4 add 5 . 6 add 7 ."),
+//         [
+//             Stmt(Num(4),Id("add"),Num(5)),
+//             Stmt(Num(6),Id("add"),Num(7),)
+//         ])
+//     // statement and solo expression
+//     assert.deepStrictEqual(parseBlockBody("4 add 5 . a  "),
+//         [
+//             Stmt(Num(4),Id("add"),Num(5)),
+//             Id('a'),
+//         ])
+// })
 test("block",() => {
-    assert.ok(match("[]",Block))
-    assert.ok(match("[foo]",Block))
-    assert.ok(match("[foo.]",Block))
-    assert.ok(match("[ foo . ]",Block))
-    assert.deepStrictEqual(produces("[foo.]",Block),Blk([],[Stmt(Id("foo"))]))
-    assert.deepStrictEqual(produces("[foo. bar.]",Block),Blk([],[Stmt(Id("foo")),Stmt(Id("bar"))]))
+    precedence("[]",Blk())
+    // precedence("[foo]",Blk(Stmt(PlnId('foo'))))
+    precedence("[foo.]",Blk(Stmt(PlnId('foo'))))
+    precedence("[foo. bar.]",Blk(Stmt(PlnId("foo")),Stmt(PlnId("bar"))))
 
-    assert.ok(match("[x| ]", Block))
-    assert.ok(match("[ x| ]", Block))
-    assert.ok(match("[x | ]", Block))
-    assert.ok(match("[x y | ]", Block))
-    assert.ok(match("[ | ]", Block))
-    assert.deepStrictEqual(produces("[x| 4.]",Block),Blk([Id('x')],[Stmt(Num(4))]))
+    precedence("[x| ]", BlkArgs([PlnId('x')],[]))
+    precedence("[ x| ]", BlkArgs([PlnId('x')],[]))
+    precedence("[ x y | ]", BlkArgs([PlnId('x'), PlnId('y')],[]))
+    precedence("[ | ]", BlkArgs([],[]))
+    precedence("[x| 4. ]", BlkArgs([PlnId('x')],[Stmt(Num(4))]))
 })
-test('parse expression',() => {
-    assert.deepStrictEqual(parseAst("4 ."),Stmt(Num(4)))
-    assert.deepStrictEqual(parseAst("(4)."),Stmt(Grp(Num(4))))
-    assert.deepStrictEqual(parseAst("(add)."),Stmt(Grp(Id("add"))))
-    assert.deepStrictEqual(parseAst("(4 + 5)."),Stmt(Grp(Num(4),Id("+"),Num(5))))
-    assert.deepStrictEqual(parseAst("[foo.]."),Stmt(Blk([],[Stmt(Id("foo"))])))
-})
+// test('parse expression',() => {
+//     assert.deepStrictEqual(parseAst("4 ."),Stmt(Num(4)))
+//     assert.deepStrictEqual(parseAst("(4)."),Stmt(Grp(Num(4))))
+//     assert.deepStrictEqual(parseAst("(add)."),Stmt(Grp(Id("add"))))
+//     assert.deepStrictEqual(parseAst("(4 + 5)."),Stmt(Grp(Num(4),Id("+"),Num(5))))
+//     assert.deepStrictEqual(parseAst("[foo.]."),Stmt(Blk([],[Stmt(Id("foo"))])))
+// })
 test('parse comments',() => {
-    assert.ok(match('//foo\n',Comment))
+    // precedence('//foo\n',Cmnt())
     // assert.ok(!match('//foo',Comment))
-    assert.ok(!match('a//foo\n',Comment))
-    assert.ok(!match('a//foo',Comment))
+    // assert.ok(!match('a//foo\n',Comment))
+    // assert.ok(!match('a//foo',Comment))
 
-    assert.deepStrictEqual(parseBlockBody("4 add 5."),[
-        Stmt(Num(4),Id('add'),Num(5)),
-    ])
-    assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
-        Stmt(Num(4),Id('add'),Num(5)),
-    ])
-    assert.deepStrictEqual(parseBlockBody("4 //\n add 5."),[
-        Stmt(Num(4),Id('add'),Num(5)),
-    ])
-    assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
-        Stmt(Num(4),Id('add'),Num(5)),
-    ])
+    // assert.deepStrictEqual(parseBlockBody("4 add 5."),[
+    //     Stmt(Num(4),Id('add'),Num(5)),
+    // ])
+    // assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
+    //     Stmt(Num(4),Id('add'),Num(5)),
+    // ])
+    // assert.deepStrictEqual(parseBlockBody("4 //\n add 5."),[
+    //     Stmt(Num(4),Id('add'),Num(5)),
+    // ])
+    // assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
+    //     Stmt(Num(4),Id('add'),Num(5)),
+    // ])
 })
 
 

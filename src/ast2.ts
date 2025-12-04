@@ -32,3 +32,7 @@ export const Keyword = (...args:Array<KeywordArgument>):KeywordCall => ({type:"k
 export const KArg = (name:KeywordId,value:Ast2):KeywordArgument => ({type:"keyword-argument",name,value})
 export const Method = (receiver:Ast2, call:UnaryCall|BinaryCall|KeywordCall):MessageCall => ({type:"message-call",receiver,call})
 export const Ass = (target:PlainId, value:Ast2):Assignment => ({type:"assignment",target, value})
+export const Stmt = (value:Ast2):Statement => ({type:"statement", value})
+export const Blk = (...body:Array<Statement>):BlockLiteral => ({type:"block", body, parameters:[] })
+export const BlkArgs = (parameters:Array<PlainId>, body:Array<Statement>):BlockLiteral => ({type:'block',  parameters, body})
+
