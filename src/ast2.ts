@@ -36,3 +36,38 @@ export const Stmt = (value:Ast2):Statement => ({type:"statement", value})
 export const Blk = (...body:Array<Statement>):BlockLiteral => ({type:"block-literal", body, parameters:[] })
 export const BlkArgs = (parameters:Array<PlainId>, body:Array<Statement>):BlockLiteral => ({type:'block-literal',  parameters, body})
 
+export function AstToString(ast: Ast2): string {
+    let str = ''
+    if (ast.type === 'group') {
+        return '(' + ast.body.map(a => AstToString(a)).join(' ') +  ')'
+    }
+    if (ast.type === 'block-literal') {
+        return '[' + ast.body.map(a => AstToString(a)).join(' ') + ']'
+    }
+    if (ast.type === 'assignment') {
+        return AstToString(ast.target) + ":=" + AstToString(ast.value)
+    }
+    if (ast.type === 'symbol-identifier') {
+        return ast.name
+    }
+    if (ast.type === 'number-literal') {
+        return '' + ast.value
+    }
+    if (ast.type === 'plain-identifier') {
+        return `@${ast.name}`
+    }
+    if (ast.type === 'unary-call') {
+        return AstToString(ast.message)
+    }
+    if (ast.type === 'binary-call') {
+        return AstToString(ast.operator) + AstToString(ast.argument)
+    }
+    if (ast.type === 'message-call') {
+        return AstToString(ast.receiver) + AstToString(ast.call)
+    }
+    if (ast.type === 'statement') {
+        return AstToString(ast.value) + '.'
+    }
+    str += ast.type + ' '
+    return str
+}

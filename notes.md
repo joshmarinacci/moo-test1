@@ -124,11 +124,12 @@ Fix precedence of parsing so that we don't need so many parens
  unary > binary > keyword
 
 next to fix
-* fully recursive with group
-* block literal
-* statement is expr followed by a period
-* return is exp prefixed by a caret
-* assignment can have any expression on the right hand side
+* [x] fully recursive with group
+* [x] block literal
+* [x] statement is expr followed by a period
+* return is exp prefixed by a caret. non-local return tests
+* [x] assignment can have any expression on the right hand side but only id on the right side
+* block literal eval isn't working
 * list and dict literals
 * comments again
 

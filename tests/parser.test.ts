@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert";
 import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs} from "../src/ast2.ts"
 import {match} from "./common.ts";
-import {precedence} from "./parser3.test.ts";
+import {eval_statement, precedence} from "./parser3.test.ts";
 
 // test ("test parser itself", () => {
 //     assert.ok(match("a",Lit("a")))
@@ -89,15 +89,15 @@ test("parse group",() => {
 test("parse statement",() => {
     // assert.ok(match(".",Statement))
     // assert.deepStrictEqual(produces(".",Statement),Stmt())
-    precedence("foo.",Stmt(PlnId('foo')))
+    eval_statement("foo.",Stmt(PlnId('foo')))
     // assert.deepStrictEqual(produces("foo",RealExp),Id("foo"))
     // assert.deepStrictEqual(produces("abcdef.",Statement),Stmt(Id("abcdef")))
-    precedence("foo .",Stmt(PlnId('foo')))
-    precedence("bar foo .",Stmt(Method(PlnId('bar'),Unary(PlnId('foo')))))
+    eval_statement("foo .",Stmt(PlnId('foo')))
+    eval_statement("bar foo .",Stmt(Method(PlnId('bar'),Unary(PlnId('foo')))))
     // precedence("4 + 5 .",Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
-    precedence("4 .",Stmt(Num(4)))
+    eval_statement("4 .",Stmt(Num(4)))
     // assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
-    precedence("foo bar .",Stmt(Method(PlnId('foo'),Unary(PlnId('bar')))))
+    eval_statement("foo bar .",Stmt(Method(PlnId('foo'),Unary(PlnId('bar')))))
     // assert.ok(match("foo bar . foo bar.",BlockBody))
     // assert.deepStrictEqual(produces("4 add 5 . 6 add 7 .",BlockBody),
     //     [
@@ -160,11 +160,11 @@ test("block",() => {
 //         ])
 // })
 test('parse expression',() => {
-    precedence("4 .",Stmt(Num(4)))
-    precedence("(4).",Stmt(Grp(Num(4))))
-    precedence("(add).",Stmt(Grp(PlnId("add"))))
-    precedence("(4 + 5).",Stmt(Grp( Method(Num(4), Binary(SymId("+"),Num(5))))))
-    precedence("[foo.].",Stmt(Blk(Stmt(PlnId("foo")))))
+    precedence("4 ",Num(4))
+    precedence("(4)",Grp(Num(4)))
+    precedence("(add)",Grp(PlnId("add")))
+    precedence("(4 + 5)",Grp( Method(Num(4), Binary(SymId("+"),Num(5)))))
+    precedence("[foo.]",Blk(Stmt(PlnId("foo"))))
 })
 // test('parse comments',() => {
     // precedence('//foo\n',Cmnt())

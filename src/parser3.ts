@@ -18,13 +18,13 @@ import {
 import type {Ast2} from "./ast2.ts"
 
 
-export function parse(input:string):Ast2 {
+export function parse(input:string, rule:string):Ast2 {
     const mooGrammar = ohm.grammar(String.raw`
 Moo {
-  Exp         = Statement | Assignment | Keyword | Binary | Unary | Group | Block | String | ident | Number
+  Exp         = Assignment | Keyword | Binary | Unary | Group | Block | String | ident | Number
   Block = "[" BlockArgs? Statement* Exp? "]"
   BlockArgs   = ident* "|"
-  Statement   = Exp "."
+  Statement   = (Assignment | Exp) "."
   Assignment  = ident ":=" Exp
   Unary       = Exp ident
   Binary      = Exp Operator Exp
@@ -87,7 +87,7 @@ Moo {
         qqstr:(_a,name,_b) => Str(name.sourceString),
     })
 
-    const m = mooGrammar.match(input);
+    const m = mooGrammar.match(input,rule);
     if (m.succeeded()) {
         return semantics(m).ast()
     } else {

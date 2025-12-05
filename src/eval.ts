@@ -1,11 +1,11 @@
 import {JoshLogger} from "./util.ts";
 
 import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
-import {DictObj, ListObj} from "./arrays.ts";
 import {NumObj} from "./number.ts";
 import {StrObj} from "./string.ts";
 import {objsEqual} from "./debug.ts";
 import {parse} from "./parser3.ts";
+import {AstToString} from "./ast2.ts"
 import type {
     Ast2,
     BinaryCall,
@@ -31,99 +31,99 @@ export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     let meth = clause.get_js_slot('value') as Function
     return meth(clause,args)
 }
-function send_message(objs: Obj[], scope: Obj):Obj {
-    if (objs.length < 1) {
-        throw new Error("cannot send message with not even a receiver");
-    }
-    let rec = objs[0]
-    if(!rec) {
-        console.error("receiver is null")
-    }
-    if(objs.length == 1) {
-        if (rec.name === 'SymbolReference') {
-            return scope.lookup_slot(rec._get_js_string())
-        }
-        return rec
-    }
-    if (rec._get_js_string() === 'return') {
-        d.p("rewriting for a return call", rec)
-        let ret = send_message(objs.slice(1),scope)
-        let ret2 = new Obj('non-local-return',scope.parent,{})
-        ret2._is_return = true
-        ret2._make_method_slot('value',ret)
-        ret2._make_method_slot('target',scope.parent as Obj);
-        return ret2;
-    }
-
-    d.p("sending message")
-    d.p('receiver',rec.print())
-    if (rec.name === 'SymbolReference') {
-        rec = scope.lookup_slot(rec._get_js_string())
-        d.p("better receiver is", rec.print())
-    }
-
-
-    let message = objs[1]
-    let message_name = message._get_js_string()
-    d.p(`message name: '${message_name}' `)
-
-    if(message_name === "::=") {
-        d.p("rewrite the message call to make a slot")
-        return send_message([
-            scope,
-            SymRef("makeSlot"),
-            StrObj(objs[0]._get_js_string()),
-            objs[2]
-        ],scope)
-    }
-
-    if(message_name === ":=") {
-        d.p("rewrite the message call to set a slot")
-        return send_message([
-            scope,
-            SymRef("setSlot"),
-            StrObj(objs[0]._get_js_string()),
-            objs[2]
-        ],scope)
-    }
-
-
-    let method = rec.lookup_slot(message._get_js_string())
-    if (method.print) {
-        d.p("got the method", method.print())
-    }
-    if (isNil(method)) {
-        throw new Error(`method is nil! could not find '${message._get_js_string()}'`)
-    }
-    let args:Array<Obj> = objs.slice(2)
-    d.p("args",args)
-
-    args = args.map((a:Obj) => {
-        if (a.name === 'SymbolReference') {
-            return scope.lookup_slot(a._get_js_string())
-        }
-        return a
-    })
-
-    if (method instanceof Function) {
-        return method(rec,args)
-    }
-    if (method.name === 'NumberLiteral') {
-        return method
-    }
-    if (method.name === 'StringLiteral') {
-        return method
-    }
-    if (method.name === 'Block') {
-        method.parent = rec
-        let meth = method.get_js_slot('value') as Function
-        return meth(method,args)
-    }
-    throw new Error("invalid method")
-}
+// function send_message(objs: Obj[], scope: Obj):Obj {
+//     if (objs.length < 1) {
+//         throw new Error("cannot send message with not even a receiver");
+//     }
+//     let rec = objs[0]
+//     if(!rec) {
+//         console.error("receiver is null")
+//     }
+//     if(objs.length == 1) {
+//         if (rec.name === 'SymbolReference') {
+//             return scope.lookup_slot(rec._get_js_string())
+//         }
+//         return rec
+//     }
+//     if (rec._get_js_string() === 'return') {
+//         d.p("rewriting for a return call", rec)
+//         let ret = send_message(objs.slice(1),scope)
+//         let ret2 = new Obj('non-local-return',scope.parent,{})
+//         ret2._is_return = true
+//         ret2._make_method_slot('value',ret)
+//         ret2._make_method_slot('target',scope.parent as Obj);
+//         return ret2;
+//     }
+//
+//     d.p("sending message")
+//     d.p('receiver',rec.print())
+//     if (rec.name === 'SymbolReference') {
+//         rec = scope.lookup_slot(rec._get_js_string())
+//         d.p("better receiver is", rec.print())
+//     }
+//
+//
+//     let message = objs[1]
+//     let message_name = message._get_js_string()
+//     d.p(`message name: '${message_name}' `)
+//
+//     if(message_name === "::=") {
+//         d.p("rewrite the message call to make a slot")
+//         return send_message([
+//             scope,
+//             SymRef("makeSlot"),
+//             StrObj(objs[0]._get_js_string()),
+//             objs[2]
+//         ],scope)
+//     }
+//
+//     if(message_name === ":=") {
+//         d.p("rewrite the message call to set a slot")
+//         return send_message([
+//             scope,
+//             SymRef("setSlot"),
+//             StrObj(objs[0]._get_js_string()),
+//             objs[2]
+//         ],scope)
+//     }
+//
+//
+//     let method = rec.lookup_slot(message._get_js_string())
+//     if (method.print) {
+//         d.p("got the method", method.print())
+//     }
+//     if (isNil(method)) {
+//         throw new Error(`method is nil! could not find '${message._get_js_string()}'`)
+//     }
+//     let args:Array<Obj> = objs.slice(2)
+//     d.p("args",args)
+//
+//     args = args.map((a:Obj) => {
+//         if (a.name === 'SymbolReference') {
+//             return scope.lookup_slot(a._get_js_string())
+//         }
+//         return a
+//     })
+//
+//     if (method instanceof Function) {
+//         return method(rec,args)
+//     }
+//     if (method.name === 'NumberLiteral') {
+//         return method
+//     }
+//     if (method.name === 'StringLiteral') {
+//         return method
+//     }
+//     if (method.name === 'Block') {
+//         method.parent = rec
+//         let meth = method.get_js_slot('value') as Function
+//         return meth(method,args)
+//     }
+//     throw new Error("invalid method")
+// }
 
 function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
-    // console.log("doing call",call.type)
+    d.p("doing call",call.type)
     if(call.type === 'unary-call') {
         let method = rec.lookup_slot(call.message.name)
         // console.log('method is',method)
@@ -167,20 +167,38 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
 }
 
 export function eval_ast(ast:Ast2, scope:Obj):Obj {
+    d.p(`eval: '${ast.type}' `)
     if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
     if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
     // if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
     if (ast.type === 'plain-identifier') return scope.lookup_slot(ast.name)
+    if (ast.type === 'assignment') {
+        d.p("doing assignment",AstToString(ast))
+        d.indent()
+        // let target = eval_ast(ast.target,scope)
+        let target = StrObj(ast.target.name)
+        d.p('target is',target.print())
+        let ret = eval_ast(ast.value,scope)
+        d.p("value resolved to ", ret.print())
+        scope._make_method_slot(ast.target.name,ret)
+        d.outdent()
+        return ret
+    }
 
     // if (ast.type === 'return') return SymRef("return")
     if (ast.type === 'group') {
+        d.p("doing group:",AstToString(ast))
         let group = ast as Group
+        console.log("actual group is",group)
         let objs = group.body.map(a => eval_ast(a,scope))
-        return send_message(objs, scope)
+        return objs[objs.length-1]
     }
     if (ast.type === 'statement') {
         let stmt = ast as Statement;
-        return eval_ast(stmt.value, scope)
+        // console.log("statement is", stmt)
+        let ret = eval_ast(stmt.value, scope)
+        // console.log("statement returned ", ret.print())
+        return ret
     }
     if (ast.type === 'block-literal') {
         let blk = ast as BlockLiteral
@@ -217,7 +235,10 @@ export function eval_ast(ast:Ast2, scope:Obj):Obj {
             // console.log("looked up value of the symbol")
         }
 
-        return perform_call(rec,msg.call,scope)
+        d.indent()
+        let ret = perform_call(rec,msg.call,scope)
+        d.outdent()
+        return ret
     }
     throw new Error(`unknown ast type '${ast.type}'`)
 }
@@ -266,11 +287,38 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
 
 
 export function cval(code:string, scope:Obj, expected?:Obj) {
-    d.disable()
+    // d.disable()
     d.p('=========')
     d.p(`code is '${code}'`)
-    let body = parse(code);
+    let body = parse(code,'Statement');
     d.p('ast is',body)
+    let last = NilObj()
+    if (Array.isArray(body)) {
+        for(let ast of body) {
+            last = eval_ast(ast,scope)
+            if (!last) last = NilObj()
+        }
+    } else {
+        last = eval_ast(body as Ast2, scope);
+    }
+    if (last._is_return) last = last.get_slot('value') as Obj;
+    d.p("returned", last.print())
+    if(typeof expected !== 'undefined') {
+        if(!objsEqual(last,expected)) {
+            console.log("not equal")
+            console.log(last.print())
+            console.log(expected.print())
+        }
+        assert(objsEqual(last, expected))
+    }
+}
+
+export function sval(code:string, scope:Obj, expected?:Obj) {
+    d.enable()
+    d.p('=========')
+    d.p(`code is '${code}'`)
+    let body = parse(code,'Statement');
+    d.p('ast is',AstToString(body));
     let last = NilObj()
     if (Array.isArray(body)) {
         for(let ast of body) {

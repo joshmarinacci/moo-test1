@@ -17,13 +17,17 @@ import {
     Unary
 } from "../src/ast2.ts";
 import assert from "node:assert";
-
+import {cval} from "../src/eval.ts";
+import {NumObj} from "../src/number.ts";
 
 export function precedence(source:string, target:Ast2) {
     console.log("====== " + source)
-
-    // let input = new InputStream(source.trim(),0);
-    let ast = parse(source);
+    let ast = parse(source,'Exp');
+    assert.deepStrictEqual(ast,target)
+}
+export function eval_statement(source:string, target:Ast2) {
+    console.log("====== " + source)
+    let ast = parse(source,'Statement');
     assert.deepStrictEqual(ast,target)
 }
 
@@ -57,7 +61,6 @@ test('parse precedence',() => {
         KArg(KeyId('with:'),Num(6))
     ))))
 })
-
 test("parse integer",() => {
     precedence("4",Num(4))
     precedence("44",Num(44))
@@ -65,19 +68,30 @@ test("parse integer",() => {
     precedence("67",Num(67))
     precedence("6_7",Num(67))
 })
-
 test("block statement",() => {
     precedence("[ ]",Blk())
     precedence("[ 4 ]",Blk(Stmt(Num(4))))
-    precedence("[ 4 ] value.",Stmt(Method(Blk(Stmt(Num(4))),Unary(PlnId('value')))))
-    precedence("[ 4. 5 ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
-    precedence("[ 4. 5. ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
+    eval_statement("[ 4 ] value.",Stmt(Method(Blk(Stmt(Num(4))),Unary(PlnId('value')))))
+    eval_statement("[ 4. 5 ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
+    eval_statement("[ 4. 5. ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
 })
 test("block with args",() => {
     precedence("[ | ]",BlkArgs([],[]))
     precedence("[ x | ]",BlkArgs([PlnId('x')],[]))
     precedence("[ x | 4 ]",BlkArgs([PlnId('x')],[Stmt(Num(4))]))
     precedence("[ x y | 4. 5 ]",BlkArgs([PlnId('x'), PlnId('y')],[Stmt(Num(4)), Stmt(Num(5))]))
+})
+test('assignment',() => {
+    // precedence('v := 5',Ass(PlnId('v'),Num(5)))
+    eval_statement('v := 5 .',Stmt(Ass(PlnId('v'),Num(5))))
+    eval_statement(`[
+        v := 5.
+        v.
+    ] value.`,Stmt(Method(BlkArgs([],[
+        Stmt(Ass(PlnId('v'),Num(5))),
+        Stmt(PlnId('v')),
+    ]), Unary(PlnId('value')))))
+
 })
 
 

@@ -294,7 +294,7 @@ export const ROOT = new Obj("ROOT", null,{
         rec.set_slot(slot_name,slot_value)
         return NilObj()
     },
-    'setObjectName':(rec:Obj, args:Array<Obj>):Obj => {
+    'setObjectName:':(rec:Obj, args:Array<Obj>):Obj => {
         rec.name = args[0]._get_js_string()
         return NilObj()
     },

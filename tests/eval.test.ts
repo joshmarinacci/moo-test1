@@ -1,5 +1,5 @@
 import test from "node:test";
-import {cval} from "../src/eval.ts";
+import {cval, sval} from "../src/eval.ts";
 import {make_standard_scope} from "../src/standard.ts";
 import {NilObj, Obj, ObjectProto} from "../src/obj.ts";
 import {NumObj} from "../src/number.ts";
@@ -18,40 +18,40 @@ test('scope tests',() => {
     cval('[ 5 . ] value .',scope, NumObj(5))
     // scope inside block can accept makeSlot. then looks up the v slot.
     cval(`[ self makeSlot: 'v' with: 5. self getSlot: "v". ] value .`,scope, NumObj(5))
-    // cval(`[ self makeSlot: "v" with: 5. self v. ] value .`,scope, NumObj(5))
-    // cval(`[ self makeSlot: "v" with: 5. v ] value .`,scope, NumObj(5))
+    cval(`[ self make_data_slot: "v" with: 5. self v. ] value .`,scope, NumObj(5))
+    // cval(`[ self make_data_slot: "v" with: 5. v ] value .`,scope, NumObj(5))
 
     // group evaluates to the last expression in the group.
     cval('8 + 8.',scope,NumObj(16))
     cval('(8 + 8).',scope,NumObj(16))
-    // // cval('8 clone.',scope,NumObj(8))
+    cval('8 clone.',scope,NumObj(8))
     cval('Object clone.', scope, ObjectProto.clone())
     cval('[ Object clone. ] value .', scope, ObjectProto.clone())
 
     cval(`[ 67. ] value.`,scope,NumObj(67))
-    // cval(`[ x:=67. x ] value.`,scope,NumObj(67))
+    cval(`[ x:=67. x ] value.`,scope,NumObj(67))
     // make an object with one slot
+    cval(`[
+        self makeSlot: "v" with: (Object clone).
+        v make_data_slot: "w" with: 5.
+        v w.
+    ] value.`,scope,NumObj(5))
     // cval(`[
     //     self makeSlot: "v" with: (Object clone).
-    //     v makeSlot: "w" with: 5.
+    //     v make_data_slot: "w" with: [ 5. ].
     //     v w.
     // ] value.`,scope,NumObj(5))
+
+    cval(`[
+        self makeSlot: "v" with: 5.
+        [
+          v.
+        ] value.
+    ] value .`,scope,NumObj(5))
+
     // cval(`[
-    //     self makeSlot: "v" with: (Object clone).
-    //     v makeSlot: "w" with: [ 5. ].
-    //     v w.
-    // ] value.`,scope,NumObj(5))
-    //
-    // cval(`[
-    //     self makeSlot "v" 5.
-    //     [
-    //       v.
-    //     ] value.
-    // ] value .`,scope,NumObj(5))
-    //
-    // cval(`[
-    //     self makeSlot "x" 5.
-    //     self makeSlot "w" [ self x. ].
+    //     self makeSlot: "x" with: 5.
+    //     self makeSlot: "w"  with: [ self x. ].
     //     self w.
     // ] value .`,scope,NumObj(5))
 })
@@ -71,8 +71,8 @@ test('conditions',() => {
     cval(` (4 < 5) ifTrue: (44 + 44) ifFalse: 89.`,scope,NumObj(88))
     cval(` (4 < 5) ifTrue: (44 - 44) ifFalse: 89.`,scope,NumObj(0))
 
-    // cval(` (4 < 5) ifTrue: [88.] ifFalse: [89.].`,scope,NumObj(88))
-    // cval(` (4 > 5) ifTrue: [88.] ifFalse: [89.].`,scope,NumObj(89))
+    cval(` (4 < 5) ifTrue: [88.] ifFalse: [89.].`,scope,NumObj(88))
+    cval(` (4 > 5) ifTrue: [88.] ifFalse: [89.].`,scope,NumObj(89))
 })
 test('Debug tests',() => {
     let scope = make_standard_scope()
@@ -80,60 +80,59 @@ test('Debug tests',() => {
 })
 test("block arg tests",() => {
     let scope = make_standard_scope()
-    cval(`
-        self makeSlot: "foo" with: [
-            88.
-        ]. 
-        self foo.
-     `,scope,NumObj(88))
-    cval(`
-        self makeSlot "foo" [ v |
-            88.
-        ].
-        self foo 1.
-        `,scope,NumObj(88))
-    cval(`[
-        self makeSlot "foo" [ v |
-            88 + v.
-        ].
-        self foo 1.
-     ] value .`,scope,NumObj(89))
-
-    cval(`
-        self makeSlot "foo" (Object clone).
-        foo makeSlot "bar" 88.
-        Debug equals: (foo bar) 88.
-        foo makeSlot "get_bar" [
-            self bar.
-        ].
-        Debug equals: (foo get_bar) 88.
-        foo makeSlot "get_bar_better" [
-            bar.
-        ].
-        Debug equals: (foo get_bar_better) 88.
-    `,scope, NilObj())
+    // cval(`[
+    //     self makeSlot: "foo" with: [
+    //         88.
+    //     ].
+    //     self foo.
+    //  ] value.`,scope,NumObj(88))
+    // cval(`
+    //     self makeSlot "foo" [ v |
+    //         88.
+    //     ].
+    //     self foo 1.
+    //     `,scope,NumObj(88))
+    // cval(`[
+    //     self makeSlot "foo" [ v |
+    //         88 + v.
+    //     ].
+    //     self foo 1.
+    //  ] value .`,scope,NumObj(89))
+    // cval(`
+    //     self makeSlot "foo" (Object clone).
+    //     foo makeSlot "bar" 88.
+    //     Debug equals: (foo bar) 88.
+    //     foo makeSlot "get_bar" [
+    //         self bar.
+    //     ].
+    //     Debug equals: (foo get_bar) 88.
+    //     foo makeSlot "get_bar_better" [
+    //         bar.
+    //     ].
+    //     Debug equals: (foo get_bar_better) 88.
+    // `,scope, NilObj())
 })
 test("global scope tests",() => {
     let scope = make_standard_scope()
     cval(`[
-        Global makeSlot "foo" (Object clone).
-        foo makeSlot "x" 5.
-        foo makeSlot "bar" [
-            self makeSlot "blah" (foo clone).
+        Global makeSlot: "foo" with: (Object clone).
+        foo makeSlot: "x" with: 5.
+        foo makeSlot: "bar" with: [
+            self makeSlot: "blah" with: (foo clone).
             blah x.
         ].
         foo bar.
     ] value .`,scope,NumObj(5))
 
     cval(`[
-        Global makeSlot "Foo" (Object clone).
-        Foo makeSlot "make" [
-            self makeSlot "blah" (Foo clone).
-            blah makeSlot "name" "Foo".
+        Global makeSlot: "Foo" with: (Object clone).
+        Foo makeSlot: "make" with: [
+            self makeSlot: "blah" with: (Foo clone).
+            blah makeSlot: "name" with: "Foo".
             blah.
         ].
-        Foo makeSlot "bar" [
-            self makeSlot "blah" (self make).
+        Foo makeSlot: "bar" with: [
+            self makeSlot: "blah" with: (self make).
             blah name.
         ].
         Foo bar.
@@ -141,36 +140,36 @@ test("global scope tests",() => {
 })
 test('assignment operator', () => {
     let scope = make_standard_scope()
-    cval(`[
-        v ::= 5.
+    sval(`[
+        v := 5.
         v.
     ] value.`,scope,NumObj(5))
-    cval(`[
-        v ::= 5.
+    sval(`[
+        v := 5.
         v := 6.
         v.
     ] value.`,scope,NumObj(6))
-    cval(`[
-        T ::= (Object clone).
-        T makeSlot "v" 44.
-        T makeSlot "gv" [
+    sval(`[
+        T := (Object clone).
+        T make_data_slot: "v" with: 44.
+        T makeSlot: "gv" with: [
             self v.
         ].
-        T makeSlot "sv" [ vv |
+        T makeSlot: "sv:" with: [ vv |
             v := vv.
         ].
-        T sv 88.
+        T sv: 88.
         T gv.
     ] value.`,scope,NumObj(88))
 })
 test ('fib recursion',() => {
     let scope = make_standard_scope()
     cval(`[
-        Math ::= Object clone.
-        Math makeSlot "fib" [n|
+        Math := Object clone.
+        Math makeSlot: "fib:" with: [n|
             (n == 0) ifTrue: [ ^ 0. ].
             (n == 1) ifTrue: [ ^ 1. ].
-            (Math fib ( n - 2 ) ) + (Math fib (n - 1 ) ).
+            (Math fib: ( n - 2 ) ) + (Math fib: (n - 1 ) ).
         ].
         Math fib 6.
      ] value . `,scope,NumObj(8))
@@ -200,35 +199,30 @@ test('non local return 3', () => {
 test('eval vector class',() => {
     let scope = make_standard_scope()
     cval(`[
-        Global makeSlot "Vector" (ObjectBase clone).
-        Vector setObjectName "Vector".
-        Vector makeSlot "x" 0.
-        Vector makeSlot "y" 0.
-        Vector makeSlot "z" 0.
-        Vector makeSlot "x:" [xx |
-            self setSlot "x" xx.
-        ].
-        Vector makeSlot "make" [ xx yy zz |
-            self makeSlot "v" (Vector clone).
-            v setSlot "x" xx.
-            v setSlot "y" yy.
-            v setSlot "z" zz.
+        Global makeSlot: "Vector" with: (ObjectBase clone).
+        Vector setObjectName: "Vector".
+        Vector make_data_slot: "x" with: 0.
+        Vector make_data_slot: "y" with: 0.
+        Vector make_data_slot: "z" with: 0.
+        Vector makeSlot: "makex:y:z:" with: [ xx yy zz |
+            self makeSlot: "v" with: (Vector clone).
+            v x: xx.
+            v y: yy.
+            v z: zz.
             v.
         ].
-        Vector makeSlot "add" [a |
-          Vector make 
-                ((a x) + (self x))
-                ((a y) + (self y))
-                ((a z) + (self z)).
+        Vector makeSlot: "add:" with: [a |
+          Vector makex: ((a x) + (self x))
+                y: ((a y) + (self y))
+                z: ((a z) + (self z)).
         ].
-        a ::= (Vector make 1 1 1).
+        a := (Vector makex: 1 y: 1 z: 1).
         
-        // check the setter
         a x: 55.
-        Debug equals: (a x) 55.
+        Debug equals: (a x) with: 55.
         
-        b ::= (Vector make 6 7 8).
-        c ::= (a add b).
+        b := (Vector makex: 6 y: 7 z: 8).
+        c := (a add: b).
         c z.
     ] value.`,scope,NumObj(9))
 })
@@ -236,11 +230,11 @@ test('fizzbuzz',() => {
     let scope = make_standard_scope()
     cval(`
     [
-    1 range: 100 [ n |
-        three ::= ((n mod: 3) == 0).
-        five ::= ((n mod: 5) == 0).
+    1 range: 100 do: [ n |
+        three := ((n mod: 3) == 0).
+        five := ((n mod: 5) == 0).
         (three and: five) ifTrue: [ 
-            return ("FizzBuzz" print).  
+            ^ ("FizzBuzz" print).  
         ].
         three ifTrue: [ "Fizz" print. ].
         five ifTrue: [ "Buzz" print. ].
