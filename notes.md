@@ -130,8 +130,9 @@ next to fix
 * [x] return is exp prefixed by a caret. non-local return tests
 * [x] assignment can have any expression on the right hand side but only id on the right side
 * [ ] block literal eval args aren't working
-* [ ] list api
-* [ ] dict api
+* [x] list api
+* [x] dict api
+* [ ] set api
 * [ ] list literal
 * [ ] dict literals
 * [ ] comments again

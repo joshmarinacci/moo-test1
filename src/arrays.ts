@@ -156,7 +156,7 @@ export const DictProto = new Obj('DictProto',ObjectProto, {
         let key = args[0]._get_js_string()
         return arr[key]
     },
-    'set:':(rec:Obj, args:Array<Obj>):Obj => {
+    'at:set:':(rec:Obj, args:Array<Obj>):Obj => {
         let arr = rec._get_js_record()
         let key = args[0]._get_js_string()
         arr[key] = args[1]

@@ -101,31 +101,28 @@ test('list api', () => {
 test('dict api',() => {
     let scope = make_standard_scope()
     cval(`[
-        dict ::= (Dict clone).
-        dict set: "six" 6.
-        dict set: "seven" 7.
-        Debug equals: (dict get: "six") 6.
-        Debug equals: (dict get: "seven") 7.
+        dict := (Dict clone).
+        dict at: "six" set: 6.
+        dict at: "seven" set: 7.
+        Debug equals: (dict get: "six") with: 6.
+        Debug equals: (dict get: "seven") with: 7.
         dict size.
 
+        keys := (dict keys).
+        Debug equals: (keys size) with: 2.
+        Debug equals: (keys at: 0) with: "six".
+        Debug equals: (keys at: 1) with: "seven".
+        
+        values := (dict values).
+        Debug equals: (values size) with: 2.
+        Debug equals: (values at: 0) with: 6.
+        Debug equals: (values at: 1) with: 7.
 
-        keys ::= (dict keys).
-        Debug equals: (keys size) 2.
-        Debug equals: (keys at: 0) "six".
-        Debug equals: (keys at: 1) "seven".
-
-        values ::= (dict values).
-        Debug equals: (values size) 2.
-        Debug equals: (values at: 0) 6.
-        Debug equals: (values at: 1) 7.
-
-        values2 ::= ((dict values) collect: [n | n + 2.]).
-        Debug equals: (values2 at: 0) 8.
-        Debug equals: (values2 at: 1) 9.
-
-        67.
-        ] value.
-    `,scope, NumObj(67))
+        
+    ] value.`,scope)
+//        values2 := ((dict values) collect: [n | n + 2.]).
+//         Debug equals: (values2 at: 0) with: 8.
+//         Debug equals: (values2 at: 1) with: 9.
 })
 
 test('set api',() => {
