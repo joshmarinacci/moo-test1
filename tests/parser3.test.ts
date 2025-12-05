@@ -7,7 +7,7 @@ import {
     Grp,
     KArg,
     KeyId,
-    Keyword,
+    Keyword, ListLit, MapLit, MapPair,
     Method,
     Num,
     PlnId, Ret,
@@ -19,6 +19,8 @@ import {
 import assert from "node:assert";
 import {cval} from "../src/eval.ts";
 import {NumObj} from "../src/number.ts";
+import {match} from "./common.ts";
+import {ArrayLiteral} from "../src/parser.ts";
 
 export function precedence(source:string, target:Ast2) {
     console.log("====== " + source)
@@ -82,7 +84,7 @@ test("block with args",() => {
     precedence("[ x y | 4. 5 ]",BlkArgs([PlnId('x'), PlnId('y')],[Stmt(Num(4)), Stmt(Num(5))]))
 })
 test('assignment',() => {
-    // precedence('v := 5',Ass(PlnId('v'),Num(5)))
+    precedence('v := 5',Ass(PlnId('v'),Num(5)))
     parse_statement('v := 5 .',Stmt(Ass(PlnId('v'),Num(5))))
     parse_statement(`[
         v := 5.
@@ -98,5 +100,9 @@ test('return statement',() => {
     precedence('^67',Ret(Num(67)))
     precedence('^(6+7)',Ret(Grp(Method(Num(6),Binary(SymId('+'),Num(7))))))
 })
-
-
+test('array literals',() => {
+    precedence("{}",ListLit())
+    precedence("{4 5}",ListLit(Num(4),Num(5)))
+    precedence("{ 'a' 'b' }",ListLit(Str('a'),Str('b')))
+    precedence("{ a:5 b:6 }",MapLit(MapPair(PlnId('a'),Num(5)), MapPair(PlnId('b'),Num(6))))
+})

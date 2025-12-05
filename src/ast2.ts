@@ -16,11 +16,14 @@ export type ReturnStatement = { type: 'return', value: Ast2 }
 export type Statement = { type: 'statement', value: Ast2}
 export type BlockLiteral = { type: 'block-literal', parameters: Array<PlainId>, body: Array<Statement>}
 export type CommentAst = { type: 'comment', content: string }
+export type ListLiteral = { type: 'list-literal', body: Array<Ast2> }
+export type MapPair = { type: 'map-pair', name: PlainId, value: Ast2 }
+export type MapLiteral = { type: 'map-literal', body: Array<MapPair> }
 
 export type Ast2 = NumberLiteral | StringLiteral | PlainId | SymbolId | KeywordId
     | UnaryCall | BinaryCall | KeywordCall | MessageCall | KeywordArgument
     | Group | Assignment | Statement | BlockLiteral | ReturnStatement
-    | CommentAst
+    | CommentAst | ListLiteral | MapLiteral
 
 
 export const PlnId = (name:string):PlainId => ({type:'plain-identifier', name})
@@ -40,6 +43,9 @@ export const Stmt = (value:Ast2):Statement => ({type:"statement", value})
 export const Blk = (...body:Array<Statement>):BlockLiteral => ({type:"block-literal", body, parameters:[] })
 export const BlkArgs = (parameters:Array<PlainId>, body:Array<Statement>):BlockLiteral => ({type:'block-literal',  parameters, body})
 export const Cmnt = (content:string):CommentAst => ({type:'comment',content})
+export const ListLit = (...body:Array<Ast2>):ListLiteral => ({type:'list-literal',body})
+export const MapPair = (name:PlainId, value:Ast2):MapPair => ({type:'map-pair',name:name,value})
+export const MapLit = (...body:Array<MapPair>):MapLiteral => ({type:'map-literal',body})
 
 export function AstToString(ast: Ast2): string {
     let str = ''

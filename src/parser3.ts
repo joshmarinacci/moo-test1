@@ -7,6 +7,9 @@ import {
     KArg,
     KeyId,
     Keyword,
+    ListLit,
+    MapLit,
+    MapPair,
     Method,
     Num,
     PlnId,
@@ -22,7 +25,7 @@ import type {Ast2} from "./ast2.ts"
 export function parse(input:string, rule:string):Ast2 {
     const mooGrammar = ohm.grammar(String.raw`
 Moo {
-  Exp         = Return | Assignment | Keyword | Binary | Unary | Group | Block | String | ident | Number
+  Exp         = Return | Assignment | Keyword | Binary | Unary | Group | Block | ArrayLiteral | String | ident | Number
   Block = "[" BlockArgs? Statement* Exp? "]"
   BlockArgs   = ident* "|"
   Statement   = (Assignment | Exp) "."
@@ -33,6 +36,10 @@ Moo {
   KArg        = kident (ident|Number|String|Block|Group)
   Keyword     = Exp KArg+
   Group       = "(" Exp ")"
+  ArrayLiteral = ArrayList | ArrayMap
+  ArrayList = "{" Exp * "}" 
+  MapPair   = ident ":" (String | Number | ident)
+  ArrayMap   = "{" MapPair * "}"
   
   Operator    = ("+" | "-" | "*" | "/" | "<" | ">" | "=" | "!")+
   ident       = letter (letter|digit|"_")* 
@@ -85,6 +92,9 @@ Moo {
         qstr:(_a,name,_b) => Str(name.sourceString),
         qqstr:(_a,name,_b) => Str(name.sourceString),
         comment:(_a,name,_b) => Cmnt(name.sourceString),
+        ArrayList:(_a,body,_b) => ListLit(...body.children.map(ch => ch.ast())),
+        MapPair:(key, _colon, value) => MapPair(key.ast(), value.ast()),
+        ArrayMap:(_a,body,_b) => MapLit(...body.children.map(ch => ch.ast()))
     })
 
     const m = mooGrammar.match(input,rule);

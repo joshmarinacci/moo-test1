@@ -20,6 +20,7 @@ import type {
     UnaryCall
 } from "./ast2.ts";
 import assert from "node:assert";
+import {DictObj, ListObj} from "./arrays.ts";
 
 const d = new JoshLogger()
 // d.disable()
@@ -238,21 +239,17 @@ export function eval_ast(ast:Ast2, scope:Obj):Obj {
         blk2.parent = scope;
         return blk2
     }
-    // if (ast.type === 'array-literal') {
-    //     let list = ast as ListLiteralAst
-    //     let vals = list.value.map(v => eval_ast(v,scope))
-    //     return ListObj(...vals)
-    // }
-    // if (ast.type === 'array-literal-map') {
-    //     let map = ast as MapLiteralAst
-    //     let obj:Record<string, Obj> = {}
-    //     map.value.forEach(pair => {
-    //         let key = pair[0] as IdAst
-    //         let value = pair[1]
-    //         obj[key.value] = eval_ast(value,scope)
-    //     })
-    //     return DictObj(obj)
-    // }
+    if (ast.type === 'list-literal') {
+        let vals = ast.body.map(v => eval_ast(v,scope))
+        return ListObj(...vals)
+    }
+    if (ast.type === 'map-literal') {
+        let obj:Record<string, Obj> = {}
+        ast.body.forEach(pair => {
+            obj[pair.name.name] = eval_ast(pair.value,scope)
+        })
+        return DictObj(obj)
+    }
     if (ast.type === 'message-call') {
         let msg = ast as MessageCall
         // console.log('message call', msg)

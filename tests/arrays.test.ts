@@ -6,9 +6,6 @@ import {make_standard_scope} from "../src/standard.ts";
 import {DictObj, ListObj} from "../src/arrays.ts";
 import {NumObj} from "../src/number.ts";
 import {match} from "./common.ts";
-import {StrObj} from "../src/string.ts";
-import {BoolObj} from "../src/boolean.ts";
-
 
 test('parse array list literals',() => {
     assert.ok(match("{}",ArrayLiteral))
@@ -28,9 +25,9 @@ test('parse array dict literals',() => {
 test('array literals',() => {
     let scope = make_standard_scope()
     cval(`[
-        l ::= { 4 5 }.
-        Debug equals: (l at: 0) 4.
-        Debug equals: (l at: 1) 5.
+        l := { 4 5 }.
+        Debug equals: (l at: 0) with: 4.
+        Debug equals: (l at: 1) with: 5.
         l size.
      ] value.`, scope, NumObj(2))
     cval(`[
@@ -41,16 +38,16 @@ test('array literals',() => {
 test('dict literals', () => {
     let scope = make_standard_scope()
     cval(`[
-        p ::= { x:5 }.
-        Debug equals: (p get: "x") 5.
+        p := { x:5 }.
+        Debug equals: (p get: "x") with: 5.
         p.
     ] value.
     `,scope, DictObj({x:NumObj(5)}))
 
     cval(`[
-        v ::= { x:5 y: 6 }.
-        Debug equals: (v get: "x") 5.
-        Debug equals: (v get: "y") 6.
+        v := { x:5 y: 6 }.
+        Debug equals: (v get: "x") with: 5.
+        Debug equals: (v get: "y") with: 6.
         v.
     ] value.
     `,scope, DictObj({x:NumObj(5)}))
@@ -113,40 +110,41 @@ test('dict api',() => {
         Debug equals: (values at: 1) with: 7.
 
         
+        values2 := ((dict values) collect: [n | n + 2.]).
+        Debug equals: (values2 at: 0) with: 8.
+        Debug equals: (values2 at: 1) with: 9.
+        
     ] value.`,scope)
-//        values2 := ((dict values) collect: [n | n + 2.]).
-//         Debug equals: (values2 at: 0) with: 8.
-//         Debug equals: (values2 at: 1) with: 9.
 })
 
 test('set api',() => {
     let scope = make_standard_scope()
     cval(`[
-        set ::= (Set clone).
+        set := (Set clone).
         
         // size
         set add: 1.
-        Debug equals: (set size) 1.
+        Debug equals: (set size) with: 1.
 
         set add: 88.
-        Debug equals: (set size) 2.
+        Debug equals: (set size) with: 2.
 
         // duplicates don't increase the size
         set add: 88.
-        Debug equals: (set size) 2.
+        Debug equals: (set size) with: 2.
 
-        A ::= (Set withAll: ({ 1 2 3 })).
-        B ::= (Set withAll: ({ 3 4 5 })).
-        Debug equals: (A size) 3.
-        Debug equals: (B size) 3.
-        C ::= (A - B).
-        Debug equals: (C size) 2.
+        A := (Set withAll: ({ 1 2 3 })).
+        B := (Set withAll: ({ 3 4 5 })).
+        Debug equals: (A size) with: 3.
+        Debug equals: (B size) with: 3.
+        C := (A - B).
+        Debug equals: (C size) with: 2.
 
-        D ::= (A + B).
-        Debug equals: (D size) 5.
+        D := (A + B).
+        Debug equals: (D size) with: 5.
         
-        E ::= (A intersect: B).
-        Debug equals: (E size) 1.
+        E := (A intersect: B).
+        Debug equals: (E size) with: 1.
 
         67.
         ] value.
