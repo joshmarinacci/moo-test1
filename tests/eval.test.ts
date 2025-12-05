@@ -162,10 +162,11 @@ test('assignment operator', () => {
     //     T gv.
     // ] value.`,scope,NumObj(88))
 })
-test ('fib recursion',() => {
+test('fib recursion',() => {
     let scope = make_standard_scope()
     cval(`[
-        Math := Object clone.
+        Global makeSlot: "Math" with: (Object clone).
+        Math setObjectName: "Math".
         Math makeSlot: "fib:" with: [n|
             (n == 0) ifTrue: [ ^ 0. ].
             (n == 1) ifTrue: [ ^ 1. ].

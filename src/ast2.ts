@@ -91,6 +91,9 @@ export function AstToString(ast: Ast2): string {
     if (ast.type === 'statement') {
         return AstToString(ast.value) + '.'
     }
+    if (ast.type === 'return') {
+        return '^' + AstToString(ast.value)
+    }
     str += ast.type + ' '
     return str
 }

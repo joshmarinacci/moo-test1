@@ -160,11 +160,11 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
     }
     if(call.type === 'keyword-call') {
         d.p('KEYWORD CALL')
-        // d.p("receiver:",rec.print())
+        d.p("receiver:",rec.print())
         let method_name = call.args.map(arg => {
             return arg.name.name
         }).join("")
-        // console.log('method name:',method_name)
+        d.p('method name:',method_name)
         let method = rec.lookup_slot(method_name)
         if (isNil(method)) {
             throw new Error(`method is nil! could not find '${method_name}'`)
@@ -289,7 +289,7 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
         }
         d.p("params", params)
         for(let i=0; i<params.length; i++) {
-            d.p("param", params[i], args[i])
+            d.p("param", params[i], args[i].print())
             scope._make_method_slot(params[i].name,args[i])
         }
         let last = NilObj()
