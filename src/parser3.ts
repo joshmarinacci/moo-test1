@@ -2,7 +2,7 @@ import * as ohm from 'ohm-js';
 import {
     Ass,
     Binary,
-    BlkArgs,
+    BlkArgs, Cmnt,
     Grp,
     KArg,
     KeyId,
@@ -46,8 +46,11 @@ Moo {
   String      = qstr | qqstr
   q = "'"
   qq = "\""
+  eol = "\n"
   qstr      = q (~ q any) * q
   qqstr      = qq (~ qq any) * qq
+  comment    = "//" (~ eol any) * eol
+  space += comment
 }
 `);
 
@@ -57,15 +60,8 @@ Moo {
         _iter: (...children) => children.map(ch => ch.ast()),
         BlockArgs:(args,_bar) => args.children.map(ch => ch.ast()),
         Block:(_a, args,body, exp,_b) => {
-            // console.log("block")
-            // console.log("args", args.ast())
-            // console.log("exp",exp.ast())
-            // console.log("body is",body.ast())
             let bod = body.children.map(ch => ch.ast())
-            if(exp.ast().length > 0) {
-                bod.push(Stmt(exp.ast()[0]))
-            }
-            // console.log("final  is",bod)
+            if(exp.ast().length > 0) bod.push(Stmt(exp.ast()[0]))
             return BlkArgs(args.ast().flat(), bod)
         },
         Statement:(value,_period) => Stmt(value.ast()),
@@ -88,6 +84,7 @@ Moo {
         num16:(_p,digits) => Num(parseInt(digits.sourceString,16)),
         qstr:(_a,name,_b) => Str(name.sourceString),
         qqstr:(_a,name,_b) => Str(name.sourceString),
+        comment:(_a,name,_b) => Cmnt(name.sourceString),
     })
 
     const m = mooGrammar.match(input,rule);

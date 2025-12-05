@@ -25,7 +25,7 @@ export function precedence(source:string, target:Ast2) {
     let ast = parse(source,'Exp');
     assert.deepStrictEqual(ast,target)
 }
-export function eval_statement(source:string, target:Ast2) {
+export function parse_statement(source:string, target:Ast2) {
     console.log("====== " + source)
     let ast = parse(source,'Statement');
     assert.deepStrictEqual(ast,target)
@@ -71,9 +71,9 @@ test("parse integer",() => {
 test("block statement",() => {
     precedence("[ ]",Blk())
     precedence("[ 4 ]",Blk(Stmt(Num(4))))
-    eval_statement("[ 4 ] value.",Stmt(Method(Blk(Stmt(Num(4))),Unary(PlnId('value')))))
-    eval_statement("[ 4. 5 ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
-    eval_statement("[ 4. 5. ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
+    parse_statement("[ 4 ] value.",Stmt(Method(Blk(Stmt(Num(4))),Unary(PlnId('value')))))
+    parse_statement("[ 4. 5 ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
+    parse_statement("[ 4. 5. ] value.",Stmt(Method(BlkArgs([],[Stmt(Num(4)),Stmt(Num(5))]),Unary(PlnId('value')))))
 })
 test("block with args",() => {
     precedence("[ | ]",BlkArgs([],[]))
@@ -83,8 +83,8 @@ test("block with args",() => {
 })
 test('assignment',() => {
     // precedence('v := 5',Ass(PlnId('v'),Num(5)))
-    eval_statement('v := 5 .',Stmt(Ass(PlnId('v'),Num(5))))
-    eval_statement(`[
+    parse_statement('v := 5 .',Stmt(Ass(PlnId('v'),Num(5))))
+    parse_statement(`[
         v := 5.
         v.
     ] value.`,Stmt(Method(BlkArgs([],[

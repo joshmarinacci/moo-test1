@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert";
-import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs} from "../src/ast2.ts"
+import {Num, PlnId, Str, SymId, Grp, Method, Unary, Binary, Blk, Stmt, BlkArgs, Ret, Cmnt} from "../src/ast2.ts"
 import {match} from "./common.ts";
-import {eval_statement, precedence} from "./parser3.test.ts";
+import {parse_statement, precedence} from "./parser3.test.ts";
 
 // test ("test parser itself", () => {
 //     assert.ok(match("a",Lit("a")))
@@ -73,12 +73,8 @@ test("parse operators",() => {
 test("handle whitespace",() => {
     precedence("4",Num(4))
     precedence("4 ",Num(4))
-    // precedence(" ", Lit(" ")))
-    // assert.ok(match("     ", OneOrMore(Lit(" "))))
-    // assert.ok(match("     ", WS))
     precedence(" 4",Num(4))
     precedence(" 4 ",Num(4))
-    // precedence(" 4 5",Num(4))
 })
 test("parse group",() => {
     precedence("(4)",Grp(Num(4)))
@@ -87,31 +83,17 @@ test("parse group",() => {
     precedence("( 4 add )",Grp(Method(Num(4),Unary(PlnId('add')))))
 })
 test("parse statement",() => {
-    // assert.ok(match(".",Statement))
-    // assert.deepStrictEqual(produces(".",Statement),Stmt())
-    eval_statement("foo.",Stmt(PlnId('foo')))
-    // assert.deepStrictEqual(produces("foo",RealExp),Id("foo"))
-    // assert.deepStrictEqual(produces("abcdef.",Statement),Stmt(Id("abcdef")))
-    eval_statement("foo .",Stmt(PlnId('foo')))
-    eval_statement("bar foo .",Stmt(Method(PlnId('bar'),Unary(PlnId('foo')))))
-    // precedence("4 + 5 .",Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
-    eval_statement("4 .",Stmt(Num(4)))
-    // assert.deepStrictEqual(produces("4 add 5 .",Statement),Stmt(Num(4),Id("add"),Num(5)))
-    eval_statement("foo bar .",Stmt(Method(PlnId('foo'),Unary(PlnId('bar')))))
-    // assert.ok(match("foo bar . foo bar.",BlockBody))
-    // assert.deepStrictEqual(produces("4 add 5 . 6 add 7 .",BlockBody),
-    //     [
-    //         Stmt(Num(4),Id("add"),Num(5)),
-    //         Stmt(Num(6),Id("add"),Num(7),)
-    //     ])
-    //
-    // assert.ok(match("return foo .",Statement))
-    // assert.ok(match("^ 67 .",Statement))
-    // assert.deepStrictEqual(produces("^ 67.",Statement),Stmt(Ret(),Num(67)))
+    parse_statement("foo.",Stmt(PlnId('foo')))
+    parse_statement("foo .",Stmt(PlnId('foo')))
+    parse_statement("bar foo .",Stmt(Method(PlnId('bar'),Unary(PlnId('foo')))))
+    parse_statement("4 + 5 .",Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
+    parse_statement("4 .",Stmt(Num(4)))
+    parse_statement("foo bar .",Stmt(Method(PlnId('foo'),Unary(PlnId('bar')))))
+    parse_statement("^ 67.",Stmt(Ret(Num(67))))
 })
 test("block",() => {
     precedence("[]",Blk())
-    // precedence("[foo]",Blk(Stmt(PlnId('foo'))))
+    precedence("[foo]",Blk(Stmt(PlnId('foo'))))
     precedence("[foo.]",Blk(Stmt(PlnId('foo'))))
     precedence("[foo. bar.]",Blk(Stmt(PlnId("foo")),Stmt(PlnId("bar"))))
 
@@ -166,24 +148,24 @@ test('parse expression',() => {
     precedence("(4 + 5)",Grp( Method(Num(4), Binary(SymId("+"),Num(5)))))
     precedence("[foo.]",Blk(Stmt(PlnId("foo"))))
 })
-// test('parse comments',() => {
-    // precedence('//foo\n',Cmnt())
-    // assert.ok(!match('//foo',Comment))
-    // assert.ok(!match('a//foo\n',Comment))
-    // assert.ok(!match('a//foo',Comment))
-// assert.deepStrictEqual(parseBlockBody("4 add 5."),[
-    //     Stmt(Num(4),Id('add'),Num(5)),
-    // ])
-    // assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
-    //     Stmt(Num(4),Id('add'),Num(5)),
-    // ])
-    // assert.deepStrictEqual(parseBlockBody("4 //\n add 5."),[
-    //     Stmt(Num(4),Id('add'),Num(5)),
-    // ])
-    // assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
-    //     Stmt(Num(4),Id('add'),Num(5)),
-    // ])
-// })
+test('parse comments',() => {
+    // precedence('//foo\n',Cmnt('foo'))
+//     assert.ok(!match('//foo',Comment))
+//     assert.ok(!match('a//foo\n',Comment))
+//     assert.ok(!match('a//foo',Comment))
+    parse_statement("4 + 5 .",Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
+    parse_statement(`4 + // foo \n 5 .`,Stmt(Method(Num(4),Binary(SymId('+'),Num(5)))))
+
+//     assert.deepStrictEqual(parseBlockBody("//\n 4 add 5."),[
+//         Stmt(Num(4),Id('add'),Num(5)),
+//     ])
+//     assert.deepStrictEqual(parseBlockBody("4 //\n add 5."),[
+//         Stmt(Num(4),Id('add'),Num(5)),
+//     ])
+//     assert.deepStrictEqual(parseBlockBody("4  add //\n 5."),[
+//         Stmt(Num(4),Id('add'),Num(5)),
+//     ])
+})
 // test('parse JS method call syntax', () => {
 //     // assert.ok(match("a",Identifier))
 //     // assert.deepStrictEqual(produces("a",Exp),Id('a'))

@@ -77,25 +77,19 @@ test('list api', () => {
 
         l add: 5.
         
+        // array contains 1 8 5
+        Debug equals: ((l select: [n | n > 1. ]) size) with: 2.
+        Debug equals: ((l select: [n | n > 6. ]) size) with: 1.
+        Debug equals: ((l reject: [n | n > 6. ]) size) with: 2.
 
+        l2 := (l collect: [n | n * 2.]).
+        
+        // array contains 2 16 10
+        Debug equals: (l2 size) with: 3.
+        Debug equals: (l2 at: 0) with: 2.
+        Debug equals: (l2 at: 1) with: 16.
+        
         ] value.`,scope)
-    // cval(`[
-
-    // array contains 1 8 5
-    // Debug equals: ((l select: [n | n > 1. ]) size) with: 2.
-    // Debug equals: ((l select: [n | n > 6. ]) size) with: 1.
-    // Debug equals: ((l reject: [n | n > 6. ]) size) with: 2.
-
-    //
-    //
-    //     l2 ::= (l collect: [n | n * 2.]).
-    //     // array contains 2 16 10
-    //     Debug equals: (l2 size) 3.
-    //     Debug equals: (l2 at: 0) 2.
-    //     Debug equals: (l2 at: 1) 16.
-    //
-    //     67.
-    // ] value.`,scope, NumObj(67))
 })
 
 test('dict api',() => {
