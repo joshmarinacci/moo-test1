@@ -22,7 +22,7 @@ import type {
 import assert from "node:assert";
 
 const d = new JoshLogger()
-d.disable()
+// d.disable()
 
 export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') {
@@ -228,8 +228,8 @@ let BLOCK_COUNT = 0
 const BlockProto = new Obj("BlockProto",ObjectProto,{
     'value':(rec:Obj,args:Array<Obj>) => {
         // console.log("inside of the block")
-        let params:Array<IdAst> = rec.get_slot('args') as unknown as Array<IdAst>
-        let body = rec.get_js_slot('body') as Array<StmtAst>
+        let params:Array<PlainId> = rec.get_slot('args') as unknown as Array<PlainId>
+        let body = rec.get_js_slot('body') as Array<Statement>
         if(!Array.isArray(body)) throw new Error("block body isn't an array")
         let scope = new Obj(`block-activation-${++BLOCK_COUNT}`,rec,{})
         if(params.length !== args.length) {
@@ -270,7 +270,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
     let body = parse(code);
-    d.p('ast is',body.toString())
+    d.p('ast is',body)
     let last = NilObj()
     if (Array.isArray(body)) {
         for(let ast of body) {

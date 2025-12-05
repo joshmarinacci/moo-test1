@@ -11,22 +11,25 @@ test('scope tests',() => {
     // evaluates a number literal
     cval(` 5 .`,scope,NumObj(5))
     // self is the scope itself
-    // cval(` self .`,scope,scope)
+    cval(` self .`,scope,scope)
     // the value message on a literal returns itself
     cval(' 5 value .',scope,NumObj(5))
     // block evaluates to the last statement
     cval('[ 5 . ] value .',scope, NumObj(5))
-    // // scope inside block can accept makeSlot. then looks up the v slot.
-    // cval(`[ self makeSlot: 'v' with: 5. self getSlot: "v". ] value .`,scope, NumObj(5))
+    // scope inside block can accept makeSlot. then looks up the v slot.
+    cval(`[ self makeSlot: 'v' with: 5. self getSlot: "v". ] value .`,scope, NumObj(5))
     // cval(`[ self makeSlot: "v" with: 5. self v. ] value .`,scope, NumObj(5))
     // cval(`[ self makeSlot: "v" with: 5. v ] value .`,scope, NumObj(5))
-    //
-    // // group evaluates to the last expression in the group.
+
+    // group evaluates to the last expression in the group.
     cval('8 + 8.',scope,NumObj(16))
     cval('(8 + 8).',scope,NumObj(16))
     // // cval('8 clone.',scope,NumObj(8))
     cval('Object clone.', scope, ObjectProto.clone())
     cval('[ Object clone. ] value .', scope, ObjectProto.clone())
+
+    cval(`[ 67. ] value.`,scope,NumObj(67))
+    // cval(`[ x:=67. x ] value.`,scope,NumObj(67))
     // make an object with one slot
     // cval(`[
     //     self makeSlot: "v" with: (Object clone).
