@@ -4,7 +4,7 @@ import {eval_block_obj} from "./eval.ts";
 const $ = (sel:string):Element => document.querySelector(sel)
 const on = (el:Element,type:string,cb:unknown) => el.addEventListener(type,cb)
 
-export function setup_dom(scope: Obj) {
+export function setup_dom(scope: Obj, document: Document) {
     const ElementProto = new Obj("DomElement",ObjectProto,{
         'onClick:':(rec:Obj,args:Array<Obj>)=>{
             let element = rec._get_js_unknown() as Element
@@ -45,6 +45,21 @@ export function setup_dom(scope: Obj) {
         'makeButton:': (rec:Obj, args:Array<Obj>):Obj => {
             let element = document.createElement("button")
             element.innerText = args[0]._get_js_string()
+            let object = new Obj("DomElement",ElementProto,{})
+            object._make_js_slot('jsvalue',element)
+            return object
+        },
+        'make:':(rec:Obj, args:Array<Obj>):Obj => {
+            let tag = args[0]._get_js_string();
+            let element = document.createElement(tag)
+            let object = new Obj("DomElement",ElementProto,{})
+            object._make_js_slot('jsvalue',element)
+            return object
+        },
+        'make:class':(rec:Obj, args:Array<Obj>):Obj => {
+            let tag = args[0]._get_js_string();
+            let element = document.createElement(tag)
+            element.className = args[1]._get_js_string()
             let object = new Obj("DomElement",ElementProto,{})
             object._make_js_slot('jsvalue',element)
             return object

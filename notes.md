@@ -116,7 +116,7 @@ Global getSlotNames do: [k v |
 // create an hbox div
 [
  dom clear.
- hbox := dom make: "hbox".
+ hbox := dom make: "div" class:"hbox".
  dom append: hbox.
 
  button := dom makeButton: 'inside of an hbox'.
