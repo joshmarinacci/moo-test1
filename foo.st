@@ -16,39 +16,44 @@ classes append: sul.
 logic := (Object clone).
 logic make_data_slot: "selectedSymbol" with: "Object".
 logic make_data_slot: "selectedMethod" with: "".
+logic makeSlot: "sendCommand:with:" with: [ cmd arg |
+    Debug print: ("logic got command " + cmd).
+    (cmd == "selectedSymbol") ifTrue: [
+        self selectedSymbol: arg.
+        self renderSymbols.
+        self renderMethods.
+    ].
+    (cmd == "selectedMethod") ifTrue: [
+        self selectedMethod: arg.
+        self renderMethods.
+    ].
+]
 Global makeSlot: "logic" with: logic.
 
 logic make_data_slot: "sul" with: sul.
 
 sul makeSlot: "sendCommand:with:" with: [ cmd arg |
-    Debug print: ("symbols got command " + cmd).
     logic sendCommand: cmd with: arg.
-    logic renderSymbols: arg.
-    logic renderMethods: "".
 ].
 
-
-logic makeSlot: "renderSymbols:" with: [ name |
+logic makeSlot: "renderSymbols" with: [
     ul := self sul.
     ul clear.
-    self selectedSymbol: name.
     sym := self selectedSymbol.
     Global getSlotNames do: [k v |
         li := dom make: "li".
         li innerHtml: k.
         (sym == k) ifTrue: [
-           Debug print: "found the match".
            li addClass: "selected".
         ].
         li onClick: [
-            Debug print: "clicked here".
-            ul sendCommand: "selected" with: k.
+            ul sendCommand: "selectedSymbol" with: k.
         ].
         ul append: li.
     ].
 ].
 
-logic makeSlot: "renderMethods:" with: [ name |
+logic makeSlot: "renderMethods" with: [
     ul := self mul.
     ul clear.
     sym := self selectedSymbol.
@@ -56,18 +61,15 @@ logic makeSlot: "renderMethods:" with: [ name |
     Debug print: ("actual symbol is" + (Global getSlot: sym)).
     obj := (Global getSlot: sym).
     Debug print: ('slot names is' + (obj getSlotNames)).
-    self selectedMethod: name.
     meth := self selectedMethod.
     obj getSlotNames do: [k v |
         li := dom make: "li".
         li innerHtml: k.
-        (name == k) ifTrue: [
-           Debug print: "found the match".
+        (meth == k) ifTrue: [
            li addClass: "selected".
         ].
         li onClick: [
-            Debug print: "clicked here".
-            ul sendCommand: "selected" with: k.
+            ul sendCommand: "selectedMethod" with: k.
         ].
         ul append: li.
     ].
@@ -78,25 +80,22 @@ logic makeSlot: "renderSource" with: [
 ].
 
 
+// methods column
+methods := dom make: "div" class: "vbox".
+methods addClass: "scroll".
+hbox append: methods.
 
- // methods column
- methods := dom make: "div" class: "vbox".
- methods addClass: "scroll".
- hbox append: methods.
+mul := dom make: "ul".
+mul makeSlot: "sendCommand:with:" with: [ cmd arg |
+    logic sendCommand: cmd with: arg.
+].
 
- mul := dom make: "ul".
- mul makeSlot: "sendCommand:with:" with: [ cmd arg |
-   Debug print: ("methods got command " + cmd).
-   Debug print: arg.
-   logic renderMethods: arg.
-   logic renderSource.
- ].
- methods append: mul.
+methods append: mul.
 logic make_data_slot: "mul" with: mul.
 
 
-logic renderSymbols: "Number".
-logic renderMethods: "value".
-logic renderSource.
+logic renderSymbols.
+logic renderMethods.
+//logic renderSource.
 
 ] value.
