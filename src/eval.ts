@@ -289,7 +289,7 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
         }
         d.p("params", params)
         for(let i=0; i<params.length; i++) {
-            d.p("param", params[i], args[i].print())
+            d.p("param", params[i], args[i])
             scope._make_method_slot(params[i].name,args[i])
         }
         let last = NilObj()

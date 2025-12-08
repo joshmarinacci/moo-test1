@@ -141,9 +141,9 @@ Global getSlotNames do: [k v |
 
 ## impl plan
 * [ ] Smalltalk class browser:
-* [ ] Vbox and hbox have mirror dom elements and forward commands to their delegate
+* [x] Vbox and hbox have mirror dom elements and forward commands to their delegate
 * [x] Dom element: toggle classname on any dom element, append element to self
-* [ ] Dom proxy: create element with name, id, and classes
+* [x] Dom proxy: create element with name, id, and classes
 * [ ] HTML List Item has text and command and delegate. Click sends command to delegate.
 * [ ] HTML List has list items and delegate. Forwards commands to delegate.
 * [ ] Top level delegate receives commands for changing the selected object

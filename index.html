@@ -17,7 +17,8 @@
             border: 1px solid gold;
             list-style: none;
             li {
-                border: 0px solid red;
+                border: 1px solid black;
+                border-width: 1px 0 0 0;
                 padding: 0.5rem;
                 &.error {
                     color: red;
@@ -45,6 +46,25 @@
         .scroll {
             overflow: scroll;
         }
+        ul {
+            border: 1px solid red;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            li {
+                padding: 0.25rem 0.5rem;
+                background-color: #fff;
+                &:hover {
+                    background-color: #cccccc;
+                }
+                &.selected {
+                    background-color: mediumaquamarine;
+                }
+                &.selected:hover {
+                    background-color: aquamarine;
+                }
+            }
+        }
     </style>
 </head>
 <body>
@@ -66,21 +86,21 @@
     const on = (el,type,cb) => el.addEventListener(type,cb)
     const d = new JoshLogger()
 
-    function output(last) {
+    function output(out) {
         const li = document.createElement('li')
-        console.log("typeof last is " + typeof last)
-        console.log("typeof last is " + last instanceof Error)
-        if (Error.isError(last)) {
-            li.innerText = last.message
+        console.log("typeof last is " + typeof out)
+        console.log("typeof last is " + out instanceof Error)
+        if (Error.isError(out)) {
+            li.innerText = out.message
             li.classList.add('error')
-        } else if(last.is_kind_of('NumberProto')) {
-            li.innerText = "Number: " + last._get_js_number()
+        } else if(out.is_kind_of('NumberProto')) {
+            li.innerText = "Number: " + out._get_js_number()
             li.classList.add('number')
-        } else if(last.is_kind_of('StringProto')) {
-            li.innerText = "String: " + last._get_js_string()
+        } else if(out.is_kind_of('StringProto')) {
+            li.innerText = "String: " + out._get_js_string()
             li.classList.add('string')
         } else {
-            li.innerText = "Object: " + last.print()
+            li.innerText = "Object: " + out.print()
             li.classList.add('object')
         }
         const cons = $("#editor-console")

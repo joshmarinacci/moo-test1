@@ -11,4 +11,5 @@ test('dom test',() => {
         dom init.
      ] value.`,scope)
     sval(`dom make: 'div'.`,scope)
+    sval(`dom clear.`,scope)
 })

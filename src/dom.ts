@@ -1,11 +1,11 @@
 import {NilObj, Obj, ObjectProto} from "./obj.ts";
 import {eval_block_obj} from "./eval.ts";
 
-const $ = (sel:string):Element => document.querySelector(sel)
-const on = (el:Element,type:string,cb:unknown) => el.addEventListener(type,cb)
 
 export function setup_dom(scope: Obj, document: Document) {
     console.log("dom proxy setup with ",document)
+    const $ = (sel:string):Element => document.querySelector(sel)
+    const on = (el:Element,type:string,cb:unknown) => el.addEventListener(type,cb)
     const ElementProto = new Obj("DomElement",ObjectProto,{
         'onClick:':(rec:Obj,args:Array<Obj>):Obj=>{
             let element = rec._get_js_unknown() as Element
@@ -19,6 +19,11 @@ export function setup_dom(scope: Obj, document: Document) {
             let element = rec._get_js_unknown() as Element
             let child = args[0]._get_js_unknown() as Element
             element.append(child)
+            return NilObj()
+        },
+        'clear':(rec:Obj, args:Array<Obj>):Obj => {
+            let element = rec._get_js_unknown() as Element
+            element.innerHTML = ''
             return NilObj()
         },
         'addClass:':(rec:Obj, args:Array<Obj>):Obj=>{
