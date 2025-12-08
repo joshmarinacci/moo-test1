@@ -22,6 +22,7 @@ logic make_data_slot: "sul" with: sul.
 
 sul makeSlot: "sendCommand:with:" with: [ cmd arg |
     Debug print: ("symbols got command " + cmd).
+    logic sendCommand: cmd with: arg.
     logic renderSymbols: arg.
     logic renderMethods: "".
 ].

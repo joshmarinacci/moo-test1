@@ -146,7 +146,11 @@ Global getSlotNames do: [k v |
 * [x] Dom proxy: create element with name, id, and classes
 * [ ] HTML List Item has text and command and delegate. Click sends command to delegate.
 * [ ] HTML List has list items and delegate. Forwards commands to delegate.
-* [ ] Top level delegate receives commands for changing the selected object
+  * Logic receives the real event
+  * Logic triggers SUL and MUL to redraw selves with the right arguments.
+  * render methods shouldn't modify state.
+  * add nicely formatted div to show the source of the selected object.
+
 * [ ] Common widget class with delegate, dom mirror, send command method.
 * [ ] List of objects, list of methods on selected object. Inside an hbox.
 
