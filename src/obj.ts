@@ -1,11 +1,6 @@
 import {JoshLogger} from "./util.ts";
 
 
-export function isNil(method: Obj) {
-    if(method.name === 'NilLiteral') return true;
-    return false;
-}
-
 const d = new JoshLogger()
 d.disable()
 
@@ -150,7 +145,7 @@ export class Obj {
         }
         if(this.parent) {
             // d.p("calling the get parent lookup on", this.parent.name);
-            if (isNil(this.parent)) {
+            if (this.parent.isNil()) {
                 // d.p("parent is nil")
             } else {
                 return this.parent._safe_lookup_slot(name, depth - 1)
@@ -255,6 +250,11 @@ export class Obj {
             return this._get_js_string()
         }
         return this._hash_value
+    }
+
+    isNil() {
+        if(this.name === 'NilLiteral') return true;
+        return false;
     }
 }
 

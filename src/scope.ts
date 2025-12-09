@@ -4,7 +4,6 @@ import {BoolObj, setup_boolean} from "./boolean.ts";
 import {DictObj, ListObj, setup_arrays} from "./arrays.ts";
 import {setup_debug} from "./debug.ts";
 import {StrObj} from "./string.ts";
-import {sval} from "./eval.ts";
 
 function root_fixup(scope:Obj) {
     ROOT._make_method_slot('listSlotNames',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
@@ -39,15 +38,6 @@ export function make_common_scope():Obj {
 
     root_fixup(scope);
     //at this point we can do eval
-
-    sval(`Number makeSlot: 'double' with: [
-      (self value) * 2.
-    ].`,scope);
-
-    sval(`Nil makeSlot: 'isNil' with: [
-         true
-      ].
-    `,scope)
 
     return scope
 }

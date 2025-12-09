@@ -1,6 +1,6 @@
 import type {NativeMethodSigature} from "./obj.ts"
 import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
-import {eval_block_obj} from "./eval.ts";
+import {eval_block_obj, sval} from "./eval.ts";
 import {BoolObj} from "./boolean.ts";
 import {StrObj} from "./string.ts";
 
@@ -59,4 +59,16 @@ export const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto
 
 export function setup_number(scope: Obj) {
     scope._make_method_slot("Number", NumberProto)
+    sval(`Number makeSlot: 'double' with: [
+      (self value) * 2.
+    ].`,scope);
+    sval(`Number makeSlot: 'square' with:[
+       (self value) * (self value).
+    ].`,scope)
+    sval(`Nil makeSlot: 'isNil' with: [
+         true
+      ].
+    `,scope)
+
+
 }

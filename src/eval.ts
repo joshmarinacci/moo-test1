@@ -1,6 +1,6 @@
 import {JoshLogger} from "./util.ts";
 
-import {isNil, JS_VALUE, NilObj, Obj} from "./obj.ts";
+import {JS_VALUE, NilObj, Obj} from "./obj.ts";
 import {NumObj} from "./number.ts";
 import {StrObj} from "./string.ts";
 import {objsEqual} from "./debug.ts";
@@ -31,7 +31,7 @@ export function eval_block_obj(clause: Obj, args:Array<Obj>) {
 function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
     if(call.type === 'unary-call') {
         let method = rec.lookup_slot(call.message.name)
-        if (isNil(method)) {
+        if (method instanceof Obj && method.isNil()) {
             throw new Error(`method is nil! could not find '${call.message.name}'`)
         }
         if (method instanceof Function) {
@@ -53,7 +53,7 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
     }
     if(call.type === 'binary-call') {
         let method = rec.lookup_slot(call.operator.name)
-        if (isNil(method)) {
+        if (method instanceof Obj && method.isNil()) {
             throw new Error(`could not find method '${call.operator.name}' on ${rec.print()}'`)
         }
         let arg = eval_ast(call.argument,scope)
@@ -67,7 +67,7 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
     if(call.type === 'keyword-call') {
         let method_name = call.args.map(arg => arg.name.name).join("")
         let method = rec.lookup_slot(method_name)
-        if (isNil(method)) {
+        if (method  instanceof Obj && method.isNil()) {
             throw new Error(`method is nil! could not find '${method_name}'`)
         }
         let args = call.args.map(arg => eval_ast(arg.value,scope))
