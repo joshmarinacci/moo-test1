@@ -4,10 +4,10 @@ import {isNil, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {NumObj} from "./number.ts";
 import {StrObj} from "./string.ts";
 import {objsEqual} from "./debug.ts";
-import {parse} from "./parser3.ts";
-import {AstToSource, AstToString} from "./ast2.ts"
+import {parse} from "./parser.ts";
+import {AstToSource, AstToString} from "./ast.ts"
 import type {
-    Ast2,
+    Ast,
     BinaryCall,
     BlockLiteral,
     Group,
@@ -18,7 +18,7 @@ import type {
     Statement,
     StringLiteral,
     UnaryCall
-} from "./ast2.ts";
+} from "./ast.ts";
 import assert from "node:assert";
 import {DictObj, ListObj} from "./arrays.ts";
 
@@ -111,7 +111,7 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
     throw new Error("method call not performed properly.")
 }
 
-export function eval_ast(ast:Ast2, scope:Obj):Obj {
+export function eval_ast(ast:Ast, scope:Obj):Obj {
     // d.p(`eval: '${ast.type}' `)
     if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
     if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
@@ -260,7 +260,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
             if (!last) last = NilObj()
         }
     } else {
-        last = eval_ast(body as Ast2, scope);
+        last = eval_ast(body as Ast, scope);
     }
     if (last._is_return) last = last.get_slot('value') as Obj;
     d.p("returned", last.print())
@@ -286,7 +286,7 @@ export function sval(code:string, scope:Obj, expected?:Obj) {
             if (!last) last = NilObj()
         }
     } else {
-        last = eval_ast(body as Ast2, scope);
+        last = eval_ast(body as Ast, scope);
     }
     if (last._is_return) last = last.get_slot('value') as Obj;
     d.p("returned", last.print())

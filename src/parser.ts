@@ -18,11 +18,11 @@ import {
     Str,
     SymId,
     Unary
-} from "./ast2.ts";
-import type {Ast2} from "./ast2.ts"
+} from "./ast.ts";
+import type {Ast} from "./ast.ts"
 
 
-export function parse(input:string, rule:string):Ast2 {
+export function parse(input:string, rule:string):Ast {
     const mooGrammar = ohm.grammar(String.raw`
 Moo {
   Exp         = Return | Assignment | Keyword | Binary | Unary | Group | Block | ArrayLiteral | String | ident | Number
@@ -63,7 +63,7 @@ Moo {
 
 
     const semantics = mooGrammar.createSemantics()
-    semantics.addOperation<Ast2>("ast",{
+    semantics.addOperation<Ast>("ast",{
         _iter: (...children) => children.map(ch => ch.ast()),
         BlockArgs:(args,_bar) => args.children.map(ch => ch.ast()),
         Block:(_a, args,body, exp,_b) => {

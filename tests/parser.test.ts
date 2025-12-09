@@ -13,17 +13,17 @@ import {
     BlkArgs,
     Ret,
     ListLit, MapLit, MapPair, Ass, Keyword, KArg, KeyId
-} from "../src/ast2.ts"
-import type {Ast2} from "../src/ast2.ts"
+} from "../src/ast.ts"
+import type {Ast} from "../src/ast.ts"
 
-import {parse} from "../src/parser3.ts";
+import {parse} from "../src/parser.ts";
 import assert from "node:assert";
 
-export function precedence(source:string, target:Ast2) {
+export function precedence(source:string, target:Ast) {
     let ast = parse(source,'Exp');
     assert.deepStrictEqual(ast,target)
 }
-export function parse_statement(source:string, target:Ast2) {
+export function parse_statement(source:string, target:Ast) {
     // console.log("====== " + source)
     let ast = parse(source,'Statement');
     assert.deepStrictEqual(ast,target)
