@@ -1,4 +1,4 @@
-import {Obj, ObjectProto, ROOT, setup_object} from "./obj.ts";
+import {NativeMethodProto, Obj, ObjectProto, ROOT, setup_object} from "./obj.ts";
 import {setup_number} from "./number.ts";
 import {setup_boolean} from "./boolean.ts";
 import {DictObj, ListObj, setup_arrays} from "./arrays.ts";
@@ -20,7 +20,9 @@ function root_fixup(scope:Obj) {
     ROOT._make_method_slot('print',(rec:Obj):Obj => {
         return StrObj(rec.print())
     })
-
+    NativeMethodProto._make_method_slot('print', (rec: Obj, args: Array<Obj>) => {
+        return StrObj('native-method')
+    })
 }
 
 export function make_common_scope():Obj {

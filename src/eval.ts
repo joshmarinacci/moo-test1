@@ -135,6 +135,9 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
         if (method instanceof Function) {
             return method(rec,[])
         }
+        if (method.is_kind_of("NativeMethod")) {
+            return (method.get_js_slot('jsvalue') as Function)(rec,[])
+        }
         if (method.name === 'Block') {
             method.parent = rec
             let meth = method.get_js_slot('value') as Function
@@ -158,7 +161,6 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
             return method(rec,[arg])
         }
         if (method.is_kind_of("NativeMethod")) {
-            console.log("doing special native method");
             return (method.get_js_slot('jsvalue') as Function)(rec,[arg])
         }
     }
@@ -179,6 +181,9 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
         // console.log("invoking")
         if (method instanceof Function) {
             return method(rec,args)
+        }
+        if (method.is_kind_of("NativeMethod")) {
+            return (method.get_js_slot('jsvalue') as Function)(rec,args)
         }
         if (method.name === 'Block') {
             method.parent = rec

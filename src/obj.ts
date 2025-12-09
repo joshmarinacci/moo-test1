@@ -313,6 +313,13 @@ export const ObjectProto = new Obj("ObjectProto", ROOT, {})
  const NilProto = new Obj("NilProto",ObjectProto,{});
 export const NilObj = () => new Obj("NilLiteral", NilProto, {})
 
+export const NativeMethodProto = new Obj("NativeMethodProto", ObjectProto, {})
+export type NativeMethodSigature = (rec:Obj, args:Array<Obj>) => Obj;
+export const NatMeth = (fun:NativeMethodSigature):Obj => {
+    return new Obj("NativeMethod", NativeMethodProto, {
+        'jsvalue': fun,
+    })
+}
 export function setup_object(scope: Obj) {
     scope._make_method_slot("Object", ObjectProto)
     scope._make_method_slot("Nil", NilProto)

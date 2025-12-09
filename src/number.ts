@@ -1,9 +1,10 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {NatMeth, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {eval_block_obj} from "./eval.ts";
 import {BoolObj} from "./boolean.ts";
 import {StrObj} from "./string.ts";
+import type {NativeMethodSigature} from "./obj.ts"
 
-const js_num_op = (cb:(a:number,b:number)=>number) => {
+const js_num_op = (cb:(a:number,b:number)=>number):NativeMethodSigature => {
     return function (rec:Obj, args:Array<Obj>){
         if (args[0].name !== "NumberLiteral") {
             throw new Error(`cannot add a non number to a number: ${args[0].name}`);
@@ -21,21 +22,12 @@ const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
         return BoolObj(cb(rec._get_js_number(), args[0]._get_js_number()))
     }
 }
-function make_native_method(meth) {
-    return new Obj("NativeMethod", ObjectProto, {
-        'jsvalue': meth,
-        'print': (rec: Obj, args: Array<Obj>) => {
-            return StrObj('native-method')
-            // return StrObj(rec._get_js_unknown() + "")
-        }
-    })
-}
 const NumberProto = new Obj("NumberProto",ObjectProto,{
     'value':(rec:Obj) => rec,
     '+':js_num_op((a,b)=>a+b),
     '-':js_num_op((a,b)=>a-b),
-    '*':make_native_method(js_num_op((a,b)=>a*b)),
-    '/':js_num_op((a,b)=>a/b),
+    '*':NatMeth(js_num_op((a,b)=>a*b)),
+    '/':NatMeth( js_num_op((a,b)=>a/b)),
     '<':js_bool_op((a,b)=>a<b),
     '>':js_bool_op((a,b)=>a>b),
     '==':(rec:Obj,args:Array<Obj>) => {
