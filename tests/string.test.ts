@@ -1,9 +1,8 @@
 import test from "node:test";
 import {make_standard_scope} from "../src/standard.ts";
-import {cval} from "../src/eval.ts";
 import {StrObj} from "../src/string.ts";
 import {BoolObj} from "../src/boolean.ts";
-import {Obj} from "../src/obj.ts";
+import {cval} from "./eval.test.ts";
 
 test('strings',() => {
     let scope = make_standard_scope()

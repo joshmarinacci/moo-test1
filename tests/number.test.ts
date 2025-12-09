@@ -1,10 +1,11 @@
 import test from "node:test";
 import {make_standard_scope} from "../src/standard.ts";
-import {cval, sval} from "../src/eval.ts";
 import {NumObj} from "../src/number.ts";
 import {Obj} from "../src/obj.ts";
 import {StrObj} from "../src/string.ts";
 import {BoolObj} from "../src/boolean.ts";
+import {cval} from "./eval.test.ts";
+import {sval} from "../src/eval.ts";
 
 test('arithmetic',() => {
     let scope:Obj = make_standard_scope()

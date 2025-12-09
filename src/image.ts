@@ -1,4 +1,4 @@
-import {cval, eval_block_obj} from "./eval.ts";
+import {eval_block_obj, eval_statement} from "./eval.ts";
 import {Bitmap, encodePNGToStream, make} from "pureimage"
 import * as fs from "node:fs";
 import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
@@ -55,7 +55,7 @@ export function setup_image(scope:Obj) {
         },
     })
     scope._make_method_slot("Color",ColorProto)
-    cval(`[
+    eval_statement(`[
         Color makeSlot: "red"   with: 16rFF0000FF.
         Color makeSlot: "green" with: 16r00FF00FF.
         Color makeSlot: "blue"  with: 16r0000FFFF.

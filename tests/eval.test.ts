@@ -1,9 +1,42 @@
 import test from "node:test";
-import {cval, sval} from "../src/eval.ts";
+import {eval_ast, sval} from "../src/eval.ts";
 import {make_standard_scope} from "../src/standard.ts";
 import {NilObj, Obj, ObjectProto} from "../src/obj.ts";
 import {NumObj} from "../src/number.ts";
+import {parse} from "../src/parser.ts";
+import {type Ast} from "../src/ast.ts";
+import {objsEqual} from "../src/debug.ts";
+import assert from "node:assert";
+import {JoshLogger} from "../src/util.ts";
 
+
+const d = new JoshLogger()
+d.disable()
+export function cval(code:string, scope:Obj, expected?:Obj) {
+    d.p('=========')
+    d.p(`code is '${code}'`)
+    let body = parse(code,'Statement');
+    d.p('ast is',body)
+    let last = NilObj()
+    if (Array.isArray(body)) {
+        for(let ast of body) {
+            last = eval_ast(ast,scope)
+            if (!last) last = NilObj()
+        }
+    } else {
+        last = eval_ast(body as Ast, scope);
+    }
+    if (last._is_return) last = last.get_slot('value') as Obj;
+    d.p("returned", last.print())
+    if(typeof expected !== 'undefined') {
+        if(!objsEqual(last,expected)) {
+            console.log("not equal")
+            console.log(last.print())
+            console.log(expected.print())
+        }
+        assert(objsEqual(last, expected))
+    }
+}
 
 test('scope tests',() => {
     let scope:Obj = make_standard_scope();

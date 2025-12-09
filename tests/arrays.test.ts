@@ -1,8 +1,8 @@
 import test from "node:test";
-import {cval} from "../src/eval.ts";
 import {make_standard_scope} from "../src/standard.ts";
 import {DictObj, ListObj} from "../src/arrays.ts";
 import {NumObj} from "../src/number.ts";
+import {cval} from "./eval.test.ts";
 
 // test('parse array list literals',() => {
 //     assert.ok(match("{}",ArrayLiteral))
