@@ -1,4 +1,4 @@
-import {NativeMethodProto, Obj, ObjectProto, ROOT, setup_object} from "./obj.ts";
+import {NativeMethodProto, NatMeth, Obj, ObjectProto, ROOT, setup_object} from "./obj.ts";
 import {setup_number} from "./number.ts";
 import {setup_boolean} from "./boolean.ts";
 import {DictObj, ListObj, setup_arrays} from "./arrays.ts";
@@ -6,23 +6,21 @@ import {setup_debug} from "./debug.ts";
 import {StrObj} from "./string.ts";
 
 function root_fixup(scope:Obj) {
-    ROOT._make_method_slot('listSlotNames',(rec:Obj, args:Array<Obj>):Obj => {
+    ROOT._make_method_slot('listSlotNames',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
         let names = rec.list_slot_names().map(name => StrObj(name))
         return ListObj(...names)
-    })
-    ROOT._make_method_slot('getSlotNames',(rec:Obj, args:Array<Obj>):Obj => {
+    }))
+    ROOT._make_method_slot('getSlotNames',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
         let slots:Record<string, Obj> = {}
         rec.list_slot_names().forEach(name => {
             slots[name] = rec.get_slot(name)
         })
         return DictObj(slots)
-    })
-    ROOT._make_method_slot('print',(rec:Obj):Obj => {
-        return StrObj(rec.print())
-    })
-    NativeMethodProto._make_method_slot('print', (rec: Obj, args: Array<Obj>) => {
+    }))
+    ROOT._make_method_slot('print',NatMeth((rec:Obj):Obj => StrObj(rec.print())))
+    NativeMethodProto._make_method_slot('print', NatMeth((rec: Obj, args: Array<Obj>) => {
         return StrObj('native-method')
-    })
+    }))
 }
 
 export function make_common_scope():Obj {

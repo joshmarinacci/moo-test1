@@ -1,4 +1,4 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {NumObj} from "./number.ts";
 import {cval, eval_block_obj} from "./eval.ts";
 import {StrObj} from "./string.ts";
@@ -83,7 +83,7 @@ class JSSet {
     }
 }
 
-export const ListProto = new Obj("ListProto",ObjectProto, {
+export const ListProto = make_native_obj("ListProto",ObjectProto, {
     'clone':(rec:Obj) => {
         let copy = rec.clone()
         copy._make_js_slot('jsvalue',[])
@@ -145,7 +145,7 @@ export const ListProto = new Obj("ListProto",ObjectProto, {
 ListProto._make_js_slot('jsvalue',[])
 export const ListObj = (...args:Array<Obj>)=> new Obj("List", ListProto, {'jsvalue': args})
 
-export const DictProto = new Obj('DictProto',ObjectProto, {
+export const DictProto = make_native_obj('DictProto',ObjectProto, {
     'clone':(rec:Obj) => {
         let copy = rec.clone()
         copy._make_js_slot('jsvalue',{})
@@ -188,7 +188,7 @@ export const DictProto = new Obj('DictProto',ObjectProto, {
 DictProto._make_js_slot("jsvalue",{})
 export const DictObj = (obj:Record<string, Obj>) => new Obj("Dict",DictProto,{"jsvalue": obj})
 
-const SetProto = new Obj("SetProto",ObjectProto,{
+const SetProto = make_native_obj("SetProto",ObjectProto,{
     'clone':(rec:Obj) => {
         let copy = rec.clone()
         copy._make_js_slot('jsvalue',new JSSet())

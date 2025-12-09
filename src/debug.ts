@@ -1,4 +1,4 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
 import assert from "node:assert";
 import {JoshLogger} from "./util.ts";
 
@@ -27,7 +27,7 @@ export function objsEqual(a: Obj, b: Obj) {
 }
 const d = new JoshLogger()
 
-const DebugProto = new Obj("DebugProto",ObjectProto,{
+const DebugProto = make_native_obj("DebugProto",ObjectProto,{
     'equals:with:':(rec:Obj, args:Array<Obj>) => {
         assert(objsEqual(args[0], args[1]),`not equal ${args[0].print()} ${args[1].print()}`)
         return NilObj()

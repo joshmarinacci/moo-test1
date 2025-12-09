@@ -1,4 +1,4 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {eval_block_obj} from "./eval.ts";
 
 
@@ -6,7 +6,7 @@ export function setup_dom(scope: Obj, document: Document) {
     console.log("dom proxy setup with ",document)
     const $ = (sel:string):Element => document.querySelector(sel)
     const on = (el:Element,type:string,cb:unknown) => el.addEventListener(type,cb)
-    const ElementProto = new Obj("DomElement",ObjectProto,{
+    const ElementProto = make_native_obj("DomElement",ObjectProto,{
         'onClick:':(rec:Obj,args:Array<Obj>):Obj=>{
             let element = rec._get_js_unknown() as Element
             let block = args[0]
@@ -40,7 +40,7 @@ export function setup_dom(scope: Obj, document: Document) {
         }
     })
 
-    const DomProxyProto = new Obj("DomProxyProto",ObjectProto,{
+    const DomProxyProto = make_native_obj("DomProxyProto",ObjectProto,{
         'init':(rec:Obj, args:Array<Obj>):Obj => {
             console.log("DomProxy.init: setting up the dom proxy")
             const editorRoot = document.createElement('div')
@@ -57,7 +57,7 @@ export function setup_dom(scope: Obj, document: Document) {
             editorRoot.appendChild(editorConsole);
             return NilObj()
         },
-        'document':(rec:Obj) => {
+        'document':(rec:Obj, args:Array<Obj>):Obj => {
             return rec._get_js_record()
         },
         'makeButton:': (rec:Obj, args:Array<Obj>):Obj => {
