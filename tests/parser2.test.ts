@@ -6,7 +6,7 @@ import {SoloExp} from "../src/parser2.ts";
 import test from "node:test";
 
 export function precedence(source:string, target:Ast2) {
-    console.log("====== " + source)
+    // console.log("====== " + source)
     let input = new InputStream(source.trim(),0);
     assert.deepStrictEqual(SoloExp(input).ast,target)
 }

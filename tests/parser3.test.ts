@@ -23,12 +23,12 @@ import {match} from "./common.ts";
 import {ArrayLiteral} from "../src/parser.ts";
 
 export function precedence(source:string, target:Ast2) {
-    console.log("====== " + source)
+    // console.log("====== " + source)
     let ast = parse(source,'Exp');
     assert.deepStrictEqual(ast,target)
 }
 export function parse_statement(source:string, target:Ast2) {
-    console.log("====== " + source)
+    // console.log("====== " + source)
     let ast = parse(source,'Statement');
     assert.deepStrictEqual(ast,target)
 }

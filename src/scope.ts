@@ -26,7 +26,7 @@ function root_fixup(scope:Obj) {
 }
 
 export function make_common_scope():Obj {
-    console.log("doing setup common")
+    // console.log("doing setup common")
     let scope = new Obj("Global", ROOT, {});
     setup_object(scope)
     setup_number(scope)
