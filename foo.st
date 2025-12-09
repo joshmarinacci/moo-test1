@@ -14,8 +14,8 @@ sul := dom make:"ul".
 classes append: sul.
 
 logic := (Object clone).
-logic make_data_slot: "selectedSymbol" with: "Object".
-logic make_data_slot: "selectedMethod" with: "".
+logic make_data_slot: "selectedSymbol" with: "Number".
+logic make_data_slot: "selectedMethod" with: "+".
 logic makeSlot: "sendCommand:with:" with: [ cmd arg |
     Debug print: ("logic got command " + cmd).
     (cmd == "selectedSymbol") ifTrue: [
@@ -26,6 +26,7 @@ logic makeSlot: "sendCommand:with:" with: [ cmd arg |
     (cmd == "selectedMethod") ifTrue: [
         self selectedMethod: arg.
         self renderMethods.
+        self renderSource.
     ].
 ]
 Global makeSlot: "logic" with: logic.
@@ -57,10 +58,7 @@ logic makeSlot: "renderMethods" with: [
     ul := self mul.
     ul clear.
     sym := self selectedSymbol.
-    Debug print: ("selected symbol is " + sym).
-    Debug print: ("actual symbol is" + (Global getSlot: sym)).
     obj := (Global getSlot: sym).
-    Debug print: ('slot names is' + (obj getSlotNames)).
     meth := self selectedMethod.
     obj getSlotNames do: [k v |
         li := dom make: "li".
@@ -77,6 +75,16 @@ logic makeSlot: "renderMethods" with: [
 
 logic makeSlot: "renderSource" with: [
   Debug print: ("showing the source to " + self selectedSymbol + " " + self selectedMethod).
+  obj := (Global getSlot: (self selectedSymbol)).
+  Debug print: "got the object".
+  Debug print: obj.
+  Debug print: "selected method is".
+  methName := self selectedMethod.
+  Debug print: methName.
+  methObj := obj getSlot: methName.
+  Debug print: "method object is".
+  Debug print: methObj.
+  (logic source) innerHtml: (methObj print).
 ].
 
 
@@ -94,8 +102,14 @@ methods append: mul.
 logic make_data_slot: "mul" with: mul.
 
 
+source := dom make: "div" class: "source".
+source innerHtml: "source code to method".
+hbox append: source.
+logic make_data_slot: "source" with: source.
+
+
 logic renderSymbols.
 logic renderMethods.
-//logic renderSource.
+logic renderSource.
 
 ] value.

@@ -17,6 +17,9 @@ function root_fixup(scope:Obj) {
         })
         return DictObj(slots)
     })
+    ROOT._make_method_slot('print',(rec:Obj):Obj => {
+        return StrObj(rec.print())
+    })
 
 }
 

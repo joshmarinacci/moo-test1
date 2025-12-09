@@ -21,11 +21,20 @@ const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
         return BoolObj(cb(rec._get_js_number(), args[0]._get_js_number()))
     }
 }
+function make_native_method(meth) {
+    return new Obj("NativeMethod", ObjectProto, {
+        'jsvalue': meth,
+        'print': (rec: Obj, args: Array<Obj>) => {
+            return StrObj('native-method')
+            // return StrObj(rec._get_js_unknown() + "")
+        }
+    })
+}
 const NumberProto = new Obj("NumberProto",ObjectProto,{
     'value':(rec:Obj) => rec,
     '+':js_num_op((a,b)=>a+b),
     '-':js_num_op((a,b)=>a-b),
-    '*':js_num_op((a,b)=>a*b),
+    '*':make_native_method(js_num_op((a,b)=>a*b)),
     '/':js_num_op((a,b)=>a/b),
     '<':js_bool_op((a,b)=>a<b),
     '>':js_bool_op((a,b)=>a>b),

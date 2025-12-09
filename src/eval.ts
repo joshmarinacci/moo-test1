@@ -157,6 +157,10 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
         if (method instanceof Function) {
             return method(rec,[arg])
         }
+        if (method.is_kind_of("NativeMethod")) {
+            console.log("doing special native method");
+            return (method.get_js_slot('jsvalue') as Function)(rec,[arg])
+        }
     }
     if(call.type === 'keyword-call') {
         d.p('KEYWORD CALL')
@@ -179,7 +183,7 @@ function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scop
         if (method.name === 'Block') {
             method.parent = rec
             let meth = method.get_js_slot('value') as Function
-            console.log("looked up method is",meth)
+            // console.log("looked up method is",meth)
             if (meth instanceof Function) {
                 return meth(method,args)
             }
