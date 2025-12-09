@@ -240,5 +240,4 @@ test('fizzbuzz',() => {
     ] value .`,scope,NumObj(88))
 })
 test('loops',() => {
-
 })

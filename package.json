@@ -7,16 +7,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite dev",
-    "test-eval": "node tests/eval.test.ts",
-    "test-parser": "node tests/parser.test.ts",
-    "test-raytracer": "node tests/raytracer.ts",
-    "test-lists": "node tests/arrays.test.ts",
-    "test-images": "node tests/image.test.ts",
-    "test-point": "node tests/point.test.ts",
-    "test-number": "node tests/number.test.ts",
-    "test-boolean": "node tests/boolean.test.ts",
-    "test-string": "node tests/string.test.ts",
-    "test": "npm run test-eval && npm run test-parser && npm run test-lists && npm run test-images && npm run test-point && npm run test-number && npm run test-boolean && npm run test-string"
+    "test": "node --test"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

@@ -188,6 +188,7 @@ next to fix
 * [ ] Implement 55 square in pure ST code. `self value star self value`.
 * [ ] Implement pow in pure ST code. `self doNativeCall: pow target: Math with: self _jsvalue with: arg0 _jsvalue`.
 * [ ] change makeSlot to understands: ?
+* 
 
 
 ## Ideas
