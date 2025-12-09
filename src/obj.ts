@@ -76,17 +76,6 @@ export class Obj {
     _make_js_slot(name: string, value:unknown) {
         this._method_slots.set(name,value)
     }
-    set_slot(slot_name: string, slot_value: Obj):void {
-        // console.log(`set slot ${this.name}.${slot_name} = ${slot_value.name}`)
-        if(!this._method_slots.has(slot_name)) {
-            d.p(`${this.name} doesn't have the slot ${slot_name}`)
-            if(this.parent) {
-                return this.parent.set_slot(slot_name,slot_value)
-            }
-        } else {
-            this._method_slots.set(slot_name, slot_value)
-        }
-    }
     print():string {
         return this._safe_print(5)
     }
@@ -139,7 +128,7 @@ export class Obj {
     get_slot(name: string):Obj {
         return this._method_slots.get(name)
     }
-    list_slot_names():string[] {
+    _list_slot_names():string[] {
         return Array.from(this._method_slots.keys())
     }
 
@@ -148,9 +137,9 @@ export class Obj {
         if (name === 'self') {
             return this
         }
-        return this.safe_lookup_slot(name, 20);
+        return this._safe_lookup_slot(name, 20);
     }
-    safe_lookup_slot(name: string, depth: number): Obj {
+    _safe_lookup_slot(name: string, depth: number): Obj {
         // d.p("safe lookup slot",depth ,name,'on',this.name)
         if(depth < 1) {
             throw new Error("recursed too deep!")
@@ -164,7 +153,7 @@ export class Obj {
             if (isNil(this.parent)) {
                 // d.p("parent is nil")
             } else {
-                return this.parent.safe_lookup_slot(name, depth - 1)
+                return this.parent._safe_lookup_slot(name, depth - 1)
             }
         }
         // d.warn(`slot not found!: '${name}'`)
@@ -258,7 +247,7 @@ export class Obj {
         return false;
     }
 
-    hashvalue() {
+    hash_value() {
         if(this.is_kind_of('NumberProto')) {
             return this._get_js_number()
         }
@@ -287,18 +276,11 @@ export const ROOT = new Obj("ROOT", null,{
         let slot_name = args[0]._get_js_string()
         return rec.get_slot(slot_name)
     },
-    'setSlot':(rec:Obj, args:Array<Obj>):Obj=> {
-        let slot_name = args[0]._get_js_string()
-        let slot_value = args[1]
-        rec.set_slot(slot_name,slot_value)
-        return NilObj()
-    },
     'setObjectName:':(rec:Obj, args:Array<Obj>):Obj => {
         rec.name = args[0]._get_js_string()
         return NilObj()
     },
     'clone':(rec:Obj):Obj => rec.clone(),
-    // 'isKindOf:':(rec:Obj, args:Array<Obj>) => BoolObj(rec.is_kind_of(args[0]._get_js_string())),
     'dump':(rec:Obj):Obj => {
         console.log("DUMPOING")
         d.p("DUMPING: ", rec.name)

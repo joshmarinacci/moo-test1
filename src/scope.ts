@@ -8,12 +8,12 @@ import {sval} from "./eval.ts";
 
 function root_fixup(scope:Obj) {
     ROOT._make_method_slot('listSlotNames',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
-        let names = rec.list_slot_names().map(name => StrObj(name))
+        let names = rec._list_slot_names().map(name => StrObj(name))
         return ListObj(...names)
     }))
     ROOT._make_method_slot('getSlotNames',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
         let slots:Record<string, Obj> = {}
-        rec.list_slot_names().forEach(name => {
+        rec._list_slot_names().forEach(name => {
             slots[name] = rec.get_slot(name)
         })
         return DictObj(slots)

@@ -9,12 +9,12 @@ class JSSet {
         this.data = new Map()
     }
     add(obj:Obj) {
-        if(!this.data.has(obj.hashvalue())) {
-            this.data.set(obj.hashvalue(),obj)
+        if(!this.data.has(obj.hash_value())) {
+            this.data.set(obj.hash_value(),obj)
         }
     }
     has(obj:Obj):boolean {
-        return this.data.has(obj.hashvalue())
+        return this.data.has(obj.hash_value())
     }
 
     // //select :: filter
