@@ -23,7 +23,7 @@ import assert from "node:assert";
 import {DictObj, ListObj} from "./arrays.ts";
 
 const d = new JoshLogger()
-// d.disable()
+d.disable()
 
 export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') {
@@ -32,96 +32,6 @@ export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     let meth = clause.get_js_slot('value') as Function
     return meth(clause,args)
 }
-// function send_message(objs: Obj[], scope: Obj):Obj {
-//     if (objs.length < 1) {
-//         throw new Error("cannot send message with not even a receiver");
-//     }
-//     let rec = objs[0]
-//     if(!rec) {
-//         console.error("receiver is null")
-//     }
-//     if(objs.length == 1) {
-//         if (rec.name === 'SymbolReference') {
-//             return scope.lookup_slot(rec._get_js_string())
-//         }
-//         return rec
-//     }
-//     if (rec._get_js_string() === 'return') {
-//         d.p("rewriting for a return call", rec)
-//         let ret = send_message(objs.slice(1),scope)
-//         let ret2 = new Obj('non-local-return',scope.parent,{})
-//         ret2._is_return = true
-//         ret2._make_method_slot('value',ret)
-//         ret2._make_method_slot('target',scope.parent as Obj);
-//         return ret2;
-//     }
-//
-//     d.p("sending message")
-//     d.p('receiver',rec.print())
-//     if (rec.name === 'SymbolReference') {
-//         rec = scope.lookup_slot(rec._get_js_string())
-//         d.p("better receiver is", rec.print())
-//     }
-//
-//
-//     let message = objs[1]
-//     let message_name = message._get_js_string()
-//     d.p(`message name: '${message_name}' `)
-//
-//     if(message_name === "::=") {
-//         d.p("rewrite the message call to make a slot")
-//         return send_message([
-//             scope,
-//             SymRef("makeSlot"),
-//             StrObj(objs[0]._get_js_string()),
-//             objs[2]
-//         ],scope)
-//     }
-//
-//     if(message_name === ":=") {
-//         d.p("rewrite the message call to set a slot")
-//         return send_message([
-//             scope,
-//             SymRef("setSlot"),
-//             StrObj(objs[0]._get_js_string()),
-//             objs[2]
-//         ],scope)
-//     }
-//
-//
-//     let method = rec.lookup_slot(message._get_js_string())
-//     if (method.print) {
-//         d.p("got the method", method.print())
-//     }
-//     if (isNil(method)) {
-//         throw new Error(`method is nil! could not find '${message._get_js_string()}'`)
-//     }
-//     let args:Array<Obj> = objs.slice(2)
-//     d.p("args",args)
-//
-//     args = args.map((a:Obj) => {
-//         if (a.name === 'SymbolReference') {
-//             return scope.lookup_slot(a._get_js_string())
-//         }
-//         return a
-//     })
-//
-//     if (method instanceof Function) {
-//         return method(rec,args)
-//     }
-//     if (method.name === 'NumberLiteral') {
-//         return method
-//     }
-//     if (method.name === 'StringLiteral') {
-//         return method
-//     }
-//     if (method.name === 'Block') {
-//         method.parent = rec
-//         let meth = method.get_js_slot('value') as Function
-//         return meth(method,args)
-//     }
-//     throw new Error("invalid method")
-// }
 
 function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
     d.p("doing call",call.type)
@@ -205,7 +115,6 @@ export function eval_ast(ast:Ast2, scope:Obj):Obj {
     // d.p(`eval: '${ast.type}' `)
     if (ast.type === 'number-literal') return NumObj((ast as NumberLiteral).value)
     if (ast.type === "string-literal") return StrObj((ast as StringLiteral).value)
-    // if (ast.type === 'plain-identifier') return SymRef((ast as PlainId).name)
     if (ast.type === 'plain-identifier') return scope.lookup_slot(ast.name)
     if (ast.type === 'assignment') {
         d.p("doing assignment",AstToString(ast))
@@ -341,7 +250,6 @@ const BlockProto = new Obj("BlockProto",ObjectProto,{
 
 
 export function cval(code:string, scope:Obj, expected?:Obj) {
-    d.disable()
     d.p('=========')
     d.p(`code is '${code}'`)
     let body = parse(code,'Statement');
@@ -368,7 +276,6 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
 }
 
 export function sval(code:string, scope:Obj, expected?:Obj) {
-    d.enable()
     d.p('=========')
     d.p(`code is '${code}'`)
     let body = parse(code,'Statement');

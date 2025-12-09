@@ -33,6 +33,7 @@ test('common protocol',() => {
     cval(`6 == 7.`,scope,BoolObj(false))
     cval(`8 == 8.`,scope,BoolObj(true))
     cval(`8 == '8'.`,scope,BoolObj(false))
+    cval(`8 isNil.`,scope,BoolObj(false))
 })
 
 test('units',() => {

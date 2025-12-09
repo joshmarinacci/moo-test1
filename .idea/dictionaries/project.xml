@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>hbox</w>
+      <w>jsvalue</w>
     </words>
   </dictionary>
 </component>

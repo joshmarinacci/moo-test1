@@ -1,6 +1,5 @@
 import {JoshLogger} from "./util.ts";
 
-export type JSMethod = (rec:Obj, args:Array<Obj>) => Obj;
 
 export function isNil(method: Obj) {
     if(method.name === 'NilLiteral') return true;
@@ -8,7 +7,6 @@ export function isNil(method: Obj) {
 }
 
 const d = new JoshLogger()
-// d.enable()
 d.disable()
 
 

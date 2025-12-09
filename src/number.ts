@@ -52,12 +52,8 @@ const NumberProto = make_native_obj("NumberProto", ObjectProto, {
         }
         return NilObj()
     },
-    'print':(rec:Obj):Obj => {
-        return StrObj(rec._get_js_number()+'')
-    },
-    'negate':(rec:Obj):Obj => {
-        return NumObj(-rec._get_js_number())
-    }
+    'print':(rec:Obj):Obj => StrObj(rec._get_js_number() + ''),
+    'negate':(rec:Obj):Obj => NumObj(-rec._get_js_number())
 });
 export const NumObj = (value:number):Obj => new Obj("NumberLiteral", NumberProto, { 'jsvalue': value,})
 

@@ -1,6 +1,6 @@
 import {NativeMethodProto, NatMeth, Obj, ObjectProto, ROOT, setup_object} from "./obj.ts";
 import {setup_number} from "./number.ts";
-import {setup_boolean} from "./boolean.ts";
+import {BoolObj, setup_boolean} from "./boolean.ts";
 import {DictObj, ListObj, setup_arrays} from "./arrays.ts";
 import {setup_debug} from "./debug.ts";
 import {StrObj} from "./string.ts";
@@ -22,6 +22,7 @@ function root_fixup(scope:Obj) {
     NativeMethodProto._make_method_slot('print', NatMeth((rec: Obj, args: Array<Obj>) => {
         return StrObj('native-method')
     }))
+    ROOT._make_method_slot('isNil',NatMeth((rec:Obj):Obj => BoolObj(false)))
 }
 
 export function make_common_scope():Obj {
@@ -39,10 +40,14 @@ export function make_common_scope():Obj {
     root_fixup(scope);
     //at this point we can do eval
 
-    sval(`
-      Number makeSlot: 'double' with: [
+    sval(`Number makeSlot: 'double' with: [
       (self value) * 2.
     ].`,scope);
+
+    sval(`Nil makeSlot: 'isNil' with: [
+         true
+      ].
+    `,scope)
 
     return scope
 }
