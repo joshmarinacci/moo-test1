@@ -144,12 +144,11 @@ Global getSlotNames do: [k v |
 * [x] Vbox and hbox have mirror dom elements and forward commands to their delegate
 * [x] Dom element: toggle classname on any dom element, append element to self
 * [x] Dom proxy: create element with name, id, and classes
-* [ ] HTML List Item has text and command and delegate. Click sends command to delegate.
-* [ ] HTML List has list items and delegate. Forwards commands to delegate.
-  * Logic receives the real event
-  * Logic triggers SUL and MUL to redraw selves with the right arguments.
-  * render methods shouldn't modify state.
-  * add nicely formatted div to show the source of the selected object.
+* [x] HTML List has list items and delegate. Forwards commands to delegate.
+  * [x] Logic receives the real event
+  * [x] Logic triggers SUL and MUL to redraw selves with the right arguments.
+  * [x] render methods shouldn't modify state.
+  * [x] add nicely formatted div to show the source of the selected object.
 
 * [ ] Common widget class with delegate, dom mirror, send command method.
 * [ ] List of objects, list of methods on selected object. Inside an hbox.
