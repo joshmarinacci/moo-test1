@@ -325,3 +325,11 @@ export function setup_object(scope: Obj) {
     scope._make_method_slot("Nil", NilProto)
     scope._make_method_slot('nil', NilObj())
 }
+
+export function make_native_obj(name: string, proto: Obj, methods: Record<string, NativeMethodSigature>) {
+    let wrapped_methods: Record<string, Obj> = {}
+    Object.keys(methods).forEach(method => {
+        wrapped_methods[method] = NatMeth(methods[method])
+    })
+    return new Obj(name, proto, wrapped_methods);
+}

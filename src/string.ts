@@ -1,7 +1,7 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {BoolObj} from "./boolean.ts";
 
-export const StringProto = new Obj("StringProto",ObjectProto,{
+export const StringProto = make_native_obj("StringProto",ObjectProto,{
     'value':(rec:Obj) => rec,
     '+':((rec:Obj, args:Array<Obj>) => StrObj(rec.to_string() + args[0].to_string())),
     '==':(rec:Obj,args:Array<Obj>) => {

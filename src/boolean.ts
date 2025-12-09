@@ -1,14 +1,14 @@
-import {NatMeth, NilObj, Obj, ObjectProto} from "./obj.ts";
+import {make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {eval_block_obj} from "./eval.ts";
 import {StrObj} from "./string.ts";
 
-const BooleanProto = new Obj("BooleanProto",ObjectProto,{
+const BooleanProto = make_native_obj("BooleanProto",ObjectProto,{
     'value':(rec:Obj) => rec,
-    'ifTrue:':NatMeth((rec:Obj, args:Array<Obj>):Obj => {
+    'ifTrue:':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec._get_js_boolean()
         if(val) return eval_block_obj(args[0],[])
         return NilObj()
-    }),
+    },
     'ifFalse:':(rec:Obj, args:Array<Obj>):Obj => {
         let val = rec._get_js_boolean()
         if(!val) return eval_block_obj(args[0],[])
@@ -53,7 +53,6 @@ const BooleanProto = new Obj("BooleanProto",ObjectProto,{
         }
         return BoolObj(false)
     },
-
 });
 export const BoolObj = (value:boolean) => new Obj("BooleanLiteral", BooleanProto, {'jsvalue':value})
 
