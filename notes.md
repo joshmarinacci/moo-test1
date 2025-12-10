@@ -27,34 +27,6 @@
   - [ ] update parser to support 10.5_meters shorthand.
   - [ ] Number_unitname is sugar for UnitNumber amount: number unit: unitname.
 
-```smalltalk
-Unit makeMethod: "init" [ 
-  Meter ::= Unit clone. 
-  Meter name: 'meter'.
-  Millimeter ::= Unit clone.
-  Millimeter name: 'millimeter'.
-  Meter addConversion: Millimeter 1000.
-  Millimeter addConversion: Meter 0.001. 
-].
-Unit makeMethod: "print": [
-  self name.
-].  
-Unit makeMethod: "hashcode": [
-  ("unit_" + (self name)).
-]
-
-Unit init.
- 
- 
-A ::= (5 unit: (Unit Meter)).
-B ::= (0.5 unit: (Unit Meter)).
-C ::= ((A + B) as: (Unit Millimeter)).
-Debug equals (C amount) 5500.
-Debug equals (C unit) (Unit Millimeter).
-Debug equals (C dimension) 1.
-
-```
-
 
 * delegation
   * capture does not understand to resend a message to another target.
@@ -173,9 +145,8 @@ next to fix
 * [x] list literal
 * [x] dict literals
 * [x] images
-* [ ] parse list of statements / block body content
+* [x] parse list of statements / block body content
 * [ ] fix precedence so `Debug print: "foo" + "bar"` will print 'foobar' by evaluating the binary expression first.
-* 
 
 
 ## Blocks
@@ -186,13 +157,15 @@ next to fix
 * [x] Use a constant for the name _jsvalue and make sure all native wrapper methods are using it.
 * [x] Implement 55 square in pure ST code. `self value star self value`.
 
-* [ ] Create a generic JS invoker so the DOM can do  
-* [ ] `self doNativeCall: ‘append’ target: self _jsvalue with: child _jsvalue`.
-* [ ] Implement pow in pure ST code. `self doNativeCall: pow target: Math with: self _jsvalue with: arg0 _jsvalue`.
-* [ ] change makeSlot to understands: ?
+* [x] Create a generic JS invoker so the DOM can do  
+* [x] `self doNativeCall: ‘append’ target: self _jsvalue with: child _jsvalue`.
+* [x] Implement pow in pure ST code. `self doNativeCall: pow target: Math with: self _jsvalue with: arg0 _jsvalue`.
+* [x] change makeSlot to understands: ?
 
 
 
 ## Ideas
 
-* How can do worlds? be able to 'fork' the world, do crazy stuff, then diff between the world and it's parent world. should be lazy copy on write. 
+* How can do worlds? be able to 'fork' the world, do crazy stuff, 
+  then diff between the world and it's parent world. should be lazy copy on write.
+* more stuff
