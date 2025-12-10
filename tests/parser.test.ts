@@ -12,7 +12,13 @@ import {
     Stmt,
     BlkArgs,
     Ret,
-    ListLit, MapLit, MapPair, Ass, Keyword, KArg, KeyId
+    ListLit,
+    MapLit,
+    MapPair,
+    Ass,
+    Keyword,
+    KeyArg,
+    KeyId
 } from "../src/ast.ts"
 import type {Ast} from "../src/ast.ts"
 
@@ -155,19 +161,19 @@ test('parse expression',() => {
     precedence('4 + (5) ', Method(Num(4), Binary(SymId('+'), Grp(Num(5))) ))
     precedence('(4) + (5) ', Method(Grp(Num(4)), Binary(SymId('+'), Grp(Num(5))) ))
 
-    precedence('foo do: bar ',Method(PlnId("foo"),Keyword(  KArg(KeyId('do:'),PlnId('bar')) )))
-    precedence('foo do: bar with: baz ',Method(PlnId("foo"),Keyword(  KArg(KeyId('do:'),PlnId('bar')), KArg(KeyId('with:'),PlnId('baz')) )))
+    precedence('foo do: bar ',Method(PlnId("foo"),Keyword(  KeyArg(KeyId('do:'),PlnId('bar')) )))
+    precedence('foo do: bar with: baz ',Method(PlnId("foo"),Keyword(  KeyArg(KeyId('do:'),PlnId('bar')), KeyArg(KeyId('with:'),PlnId('baz')) )))
 
-    precedence('4 do: 5 ', Method(Num(4),Keyword(KArg(KeyId('do:'),Num(5)))))
-    precedence('(4) do: 5 ', Method(Grp(Num(4)), Keyword( KArg(KeyId('do:'),Num(5)))))
+    precedence('4 do: 5 ', Method(Num(4),Keyword(KeyArg(KeyId('do:'),Num(5)))))
+    precedence('(4) do: 5 ', Method(Grp(Num(4)), Keyword( KeyArg(KeyId('do:'),Num(5)))))
 
     precedence('foo := 4 ', Ass(PlnId('foo'), Num(4)))
     precedence('foo := (4) ', Ass(PlnId('foo'), Grp(Num(4))))
 
-    precedence('foo := 4 do: 5 ', Ass(PlnId('foo'), Method(Num(4), Keyword( KArg(KeyId('do:'),Num(5))))))
+    precedence('foo := 4 do: 5 ', Ass(PlnId('foo'), Method(Num(4), Keyword( KeyArg(KeyId('do:'),Num(5))))))
     precedence('foo := 4 do: 5 with: 6 ', Ass(PlnId('foo'), Method(Num(4), Keyword(
-        KArg(KeyId('do:'),Num(5)),
-        KArg(KeyId('with:'),Num(6))
+        KeyArg(KeyId('do:'),Num(5)),
+        KeyArg(KeyId('with:'),Num(6))
     ))))
 
     precedence("[foo.]",Blk(Stmt(PlnId("foo"))))
@@ -176,6 +182,20 @@ test('parse priority', () => {
     precedence('4 + 5 + 6 ', Method(
         Method(Num(4),Binary(SymId('+'),Num(5))), // 4 + 5
         Binary(SymId('+'), Num(6)))) // + 6
+
+    precedence('Debug print: self value', Method(PlnId('Debug'),Keyword(
+        KeyArg(
+            KeyId('print:'),
+            Method(PlnId('self'),Unary(PlnId('value')))
+        ))
+    ))
+
+    precedence('Debug print: 4 + 5', Method(PlnId('Debug'),Keyword(
+        KeyArg(
+            KeyId('print:'),
+            Method(Num(4),Binary(SymId('+'),Num(5)))
+        ))
+    ))
 })
 
 test('parse comments',() => {

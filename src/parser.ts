@@ -4,7 +4,7 @@ import {
     Binary,
     BlkArgs, Cmnt,
     Grp,
-    KArg,
+    KeyArg,
     KeyId,
     Keyword,
     ListLit,
@@ -32,11 +32,11 @@ Moo {
   Statement   = (Assignment | Exp) "."
   Assignment  = ident ":=" Exp
   Return      = "^" Exp
-  Unary       = Exp ident
-  Solo        = Group | String | ident | Number
+  Unary       = Exp ~kident ident
+  Solo        = Group | String | ident | Number | String | Block | ArrayLiteral
   Binary      = Exp Operator Solo
-  KArg        = kident (ident|Number|String|Block|Group|ArrayLiteral)
-  Keyword     = Exp KArg+
+  KeyArg        = kident (Unary | Binary | Solo)
+  Keyword     = Exp KeyArg+
   Group       = "(" Exp ")"
   ArrayLiteral = ArrayList | ArrayMap
   ArrayList = "{" Exp * "}" 
@@ -44,7 +44,7 @@ Moo {
   ArrayMap   = "{" MapPair * "}"
   
   Operator    = ("+" | "-" | "*" | "/" | "<" | ">" | "=" | "!")+
-  ident       = (letter|"_") (letter|digit|"_")* 
+  ident       = (letter|"_") (letter|digit|"_")*
   kident      = letter (letter|digit|"_")* ":"
   Number      = num2 | num16 | float | integer
   dig         = digit | "_"
@@ -81,7 +81,7 @@ Moo {
         Statement:(value,_period) => Stmt(value.ast()),
         Unary:(receiver, method)=> Method(receiver.ast(), Unary(method.ast())),
         Binary:(receiver,op,arg)=> Method(receiver.ast(), Binary(op.ast(), arg.ast())),
-        KArg:(kident, exp) => KArg(kident.ast(), exp.ast()),
+        KeyArg:(kident, exp) => KeyArg(kident.ast(), exp.ast()),
         Keyword:(receiver,args)=> Method(receiver.ast(), Keyword(...args.ast())),
         Assignment:(ident,_op,arg)=> Ass(ident.ast(), arg.ast()),
         Return:(caret, value) => Ret(value.ast()),
