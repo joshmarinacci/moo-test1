@@ -11,6 +11,7 @@ import type {
     BlockLiteral,
     KeywordCall,
     NumberLiteral,
+    Statement,
     StringLiteral,
     UnaryCall
 } from "./ast.ts";
@@ -131,6 +132,22 @@ export function eval_ast(ast:Ast, scope:Obj):Obj {
 
 export function eval_statement(code:string, scope:Obj):Obj {
     let body = parse(code,'Statement');
+    d.p('ast is',body)
+    let last = NilObj()
+    if (Array.isArray(body)) {
+        for(let ast of body) {
+            last = eval_ast(ast,scope)
+            if (!last) last = NilObj()
+        }
+    } else {
+        last = eval_ast(body as Ast, scope);
+    }
+    if (last._is_return) last = last.get_slot('value') as Obj;
+    d.p("returned", last.print())
+    return last
+}
+export function eval_statements(code:string, scope:Obj):Obj {
+    let body = parse(code,'BlockBody') as unknown as Array<Statement>;
     d.p('ast is',body)
     let last = NilObj()
     if (Array.isArray(body)) {

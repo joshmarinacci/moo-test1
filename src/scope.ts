@@ -22,28 +22,45 @@ function root_fixup(scope:Obj) {
         return StrObj('native-method')
     }))
     ROOT._make_method_slot('isNil',NatMeth((rec:Obj):Obj => BoolObj(false)))
-    ROOT._make_method_slot("jsCall:on:",NatMeth((rec:Obj,args:Array<Obj>):Obj => {
-        console.log("doing js call")
-        let method_name = args[0]._get_js_string()
+    ROOT._make_method_slot('jsSet:on:with:',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
+        let field_name = args[0]._get_js_string()
         let js_target = args[1]
-        console.log("method name is", method_name)
-        console.log("js target is", js_target)
+        let value = args[2]
         try {
-            let result = js_target[method_name]()
-            console.log("result is",result)
-            return result
+            js_target[field_name] = value
         } catch (e) {
             console.log("error",e)
         }
-        return StrObj("this is a string")
+        return NilObj()
+    }))
+    ROOT._make_method_slot('jsGet:on:',NatMeth((rec:Obj, args:Array<Obj>):Obj => {
+        let field_name = args[0]._get_js_string()
+        let js_target = args[1]
+        try {
+            let value = js_target[field_name]
+            if(typeof value == 'string') {
+                return StrObj(value)
+            }
+        } catch (e) {
+            console.log("error",e)
+        }
+        return NilObj()
+    }))
+    ROOT._make_method_slot("jsCall:on:",NatMeth((rec:Obj,args:Array<Obj>):Obj => {
+        let method_name = args[0]._get_js_string()
+        let js_target = args[1]
+        try {
+            return js_target[method_name]()
+        } catch (e) {
+            console.log("error",e)
+        }
+        return NilObj()
     }))
     ROOT._make_method_slot("jsCall:on:with:",NatMeth((rec:Obj,args:Array<Obj>):Obj => {
         let method_name = args[0]._get_js_string()
         let js_target = args[1]
         try {
-            let result = js_target[method_name](args[2])
-            console.log("result is",result)
-            return result
+            return js_target[method_name](args[2])
         } catch (e) {
             console.log("error",e)
         }
@@ -53,9 +70,7 @@ function root_fixup(scope:Obj) {
         let method_name = args[0]._get_js_string()
         let js_target = args[1]
         try {
-            let result = js_target[method_name](args[2],args[3])
-            console.log("result is",result)
-            return result
+            return js_target[method_name](args[2], args[3])
         } catch (e) {
             console.log("error",e)
         }

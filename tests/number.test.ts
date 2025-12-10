@@ -82,7 +82,6 @@ test('units',() => {
     `,scope)
     mval(`
         A := (UnitNumber make: 10 unit: 'meter' dimension: 1).
-        A dump.
         Debug equals: (A amount) with: 10.
     `,scope)
     // cval(`[

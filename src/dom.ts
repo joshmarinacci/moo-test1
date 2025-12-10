@@ -1,5 +1,5 @@
 import {JS_VALUE, make_native_obj, NilObj, Obj, ObjectProto} from "./obj.ts";
-import {eval_block_obj, eval_statement} from "./eval.ts";
+import {eval_block_obj, eval_statements} from "./eval.ts";
 
 
 export function setup_dom(scope: Obj, document: Document) {
@@ -15,23 +15,12 @@ export function setup_dom(scope: Obj, document: Document) {
             })
             return NilObj()
         },
-        'clear':(rec:Obj, args:Array<Obj>):Obj => {
-            let element = rec._get_js_unknown() as Element
-            element.innerHTML = ''
-            return NilObj()
-        },
         'addClass:':(rec:Obj, args:Array<Obj>):Obj=>{
             let element = rec._get_js_unknown() as Element
             let classname = args[0]._get_js_string()
             element.classList.add(classname)
             return NilObj()
         },
-        'innerHtml:':(rec:Obj, args:Array<Obj>):Obj=>{
-            let element = rec._get_js_unknown() as Element
-            let text = args[0]._get_js_string()
-            element.innerHTML = text
-            return NilObj()
-        }
     })
 
     const DomProxyProto = make_native_obj("DomProxyProto",ObjectProto,{
@@ -66,27 +55,12 @@ export function setup_dom(scope: Obj, document: Document) {
             let element = document.createElement(tag)
             let object = new Obj("DomElement",DomElementProto,{})
             object._make_js_slot(JS_VALUE,element)
-            console.log("making: ", tag)
             return object
         },
         'make:class:':(rec:Obj, args:Array<Obj>):Obj => {
             let tag = args[0]._get_js_string();
             let element = document.createElement(tag)
             element.className = args[1]._get_js_string()
-            let object = new Obj("DomElement",DomElementProto,{})
-            object._make_js_slot(JS_VALUE,element)
-            return object
-        },
-        'makeDiv:': (rec:Obj, args:Array<Obj>):Obj => {
-            let element = document.createElement("div")
-            element.className = args[0]._get_js_string()
-            let object = new Obj("DomElement",DomElementProto,{})
-            object._make_js_slot(JS_VALUE,element)
-            return object
-        },
-        'makeSpan:': (rec:Obj, args:Array<Obj>):Obj => {
-            let element = document.createElement("span")
-            element.innerText = args[0]._get_js_string()
             let object = new Obj("DomElement",DomElementProto,{})
             object._make_js_slot(JS_VALUE,element)
             return object
@@ -106,10 +80,19 @@ export function setup_dom(scope: Obj, document: Document) {
     }
     scope._make_method_slot("DomProxy",DomProxyProto)
     scope._make_method_slot("DomElement",DomElementProto)
-    eval_statement(`[
+    eval_statements(`
         DomElement understands: "append:" with: [ child |
             self jsCall: "append" on: (self getJsSlot: "_jsvalue") with: (child getJsSlot: "_jsvalue").
         ].
-    ]value.`,scope)
+        DomElement understands: "innerHtml:" with: [ str |
+            self jsSet: "innerHTML" on: (self getJsSlot: "_jsvalue") with: (str getJsSlot: "_jsvalue").
+        ].
+        DomElement understands: "innerHtml" with: [|
+            self jsGet: "innerHTML" on: (self getJsSlot: "_jsvalue").
+        ].
+        DomElement understands: "clear" with: [ |
+            self jsSet: "innerHTML" on: (self getJsSlot: "_jsvalue") with: ("" getJsSlot: "_jsvalue").
+        ].
+    `,scope)
 
 }

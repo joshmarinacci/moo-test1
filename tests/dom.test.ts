@@ -18,6 +18,12 @@ test('dom test',() => {
         d2 := (dom make: 'div').
         
         d2 append: d1.
+        
+        d2 innerHtml: "foo".
+        Debug equals: (d2 innerHtml) with: "foo".
+        
+        d2 clear.
+        Debug equals: (d2 innerHtml) with: "".
      `,scope)
     sval(`dom clear.`,scope)
 })
