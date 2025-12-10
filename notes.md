@@ -49,67 +49,6 @@
   - [ ] ObjectBrowser render: DOMProxy.  
     - [ ] list all objects in global scope 
 
-Page loads JS source to set up the entire env.  There is a plain JS button. Clicking the button will invoke 
-```
-[
-  dom ::= ((DOMProxy clone) init).
-  ObjectBrowserDemo render: dom.
-] value. 
-
-[ 
-dom clear.
-Global listSlotNames do: [name |
-   Debug print: name.
-   button := dom makeButton: name.
-   button onClick: [
-       Debug print: ("this object is " + name).
-   ].
-   dom append: button.
-].
-] value.
-
-
-[
-// dump the slots of each class when clicking on it's button
-dom clear.
-Global getSlotNames do: [k v |
-  button := (dom makeButton: k).
-  button onClick: [
-     Debug print: ("this object is " + k) .
-     v listSlotNames do: [name |
-           Debug print: name.
-     ].
-  ].
-  dom append: button.
-].
-] value.
-
-
-// create an hbox div
-[
- dom clear.
- hbox := dom make: "div" class:"hbox".
- dom append: hbox.
- 
- column := dom make: "div" class: "vbox".
- column addClass: "scroll".
- hbox append: column.
- 
- ul := dom make:"ul".
- column append: ul.
-  
- Global getSlotNames do: [k v |
-    li := dom make: "li".
-    li onClick: [
-       Debug print: "clicked here".
-    ].
-    ul append li.
- ].
-
-] value. 
-
-```
-
 
 ## impl plan
 * [ ] Smalltalk class browser:
@@ -146,7 +85,7 @@ next to fix
 * [x] dict literals
 * [x] images
 * [x] parse list of statements / block body content
-* [ ] fix precedence so `Debug print: "foo" + "bar"` will print 'foobar' by evaluating the binary expression first.
+* [x] fix precedence so `Debug print: "foo" + "bar"` will print 'foobar' by evaluating the binary expression first.
 
 
 ## Blocks
