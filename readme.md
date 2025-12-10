@@ -5,11 +5,12 @@ This is a minimal implementation of a Smalltalk / Self like language.
 ## Features
 * Moo uses prototypes (like Self), with single inheritance and has no
 classes or metaclasses. To create a new object clone an existing one.
-* Data slots are created with `make_data_slot:with:`. 
-  When you create a data slot the getter and setter are automatically created for you.
-  Ex: `foo make_data_slot: "speed" with: "88"` creates the methods `speed` and `speed:`. 
-* Methods are created with `understands:with:`. 
-* Moo has a subset of the standard number, string, boolean, and collections APIs.
+* Like Self, there are data slots and method slots.
+  * Data slots are created with `make_data_slot:with:`. 
+    When you create a data slot the getter and setter are automatically created for you.
+    Ex: `foo make_data_slot: "speed" with: "88"` creates the methods `speed` and `speed:`. 
+  * Methods are created with `understands:with:`. Ex: `foo understands: "speak" with: [ "hi there!" ].`
+* Moo has a subset of the standard Smalltalk Number, String, Boolean, and Collections APIs.
 * It has a minimal web-based REPL and a DOM wrapper api to create HTML elements manually.
 * It has a minimal JS proxy API so you can manipulate JS objects from pure Smalltalk code.
 
@@ -56,3 +57,14 @@ Moo uses mostly standard Smalltalk syntax. Notable changes:
 * [The evolution of Smalltalk: from Smalltalk-72 through Squeak](https://dl.acm.org/doi/10.1145/3386335) by Dan Ingalls.
 * [Self Language Homepage/](https://selflanguage.org/).
 
+
+
+## Tasks
+
+* [ ] implement Boolean `ifTrue:` and `ifFalse:` in pure ST that calls `ifTrue:ifFalse`.
+* [ ] figure out how to pause and restart execution in the tree-walk interpreter.
+* [ ] make image api work in browser with HTML canvas.
+* [ ] add example code to the browser repl.
+* [ ] add missing collections apis with tests
+* [ ] flesh out the string api
+* [ ] make some of the [Advent JS](https://adventjs.dev/en) challenges working. 
