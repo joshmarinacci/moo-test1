@@ -23,7 +23,7 @@ export type MapLiteral = { type: 'map-literal', body: Array<MapPair> }
 export type Ast = NumberLiteral | StringLiteral | PlainId | SymbolId | KeywordId
     | UnaryCall | BinaryCall | KeywordCall | MessageCall | KeywordArgument
     | Group | Assignment | Statement | BlockLiteral | ReturnStatement
-    | CommentAst | ListLiteral | MapLiteral
+    | CommentAst | ListLiteral | MapLiteral | MapPair
 
 
 export const PlnId = (name:string):PlainId => ({type:'plain-identifier', name})

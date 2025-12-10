@@ -9,7 +9,6 @@ import {objsEqual} from "../src/debug.ts";
 import assert from "node:assert";
 import {JoshLogger} from "../src/util.ts";
 
-
 const d = new JoshLogger()
 d.disable()
 export function cval(code:string, scope:Obj, expected?:Obj) {
@@ -40,7 +39,7 @@ export function cval(code:string, scope:Obj, expected?:Obj) {
 export function mval(code:string, scope:Obj, expected?:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
-    let body = parse(code,'BlockBody') as Array<Statement>;
+    let body = parse(code,'BlockBody') as unknown as Array<Statement>;
     d.p('ast is',body)
     let last = NilObj()
     if (Array.isArray(body)) {
@@ -88,23 +87,23 @@ test('scope tests',() => {
     cval(`[ 67. ] value.`,scope,NumObj(67))
     cval(`[ x:=67. x ] value.`,scope,NumObj(67))
     // make an object with one slot
-    cval(`[
+    mval(`
         self makeSlot: "v" with: (Object clone).
         v make_data_slot: "w" with: 5.
         v w.
-    ] value.`,scope,NumObj(5))
+    `,scope,NumObj(5))
     // cval(`[
     //     self makeSlot: "v" with: (Object clone).
     //     v make_data_slot: "w" with: [ 5. ].
     //     v w.
     // ] value.`,scope,NumObj(5))
 
-    cval(`[
+    mval(`
         self makeSlot: "v" with: 5.
         [
           v.
         ] value.
-    ] value .`,scope,NumObj(5))
+    `,scope,NumObj(5))
 
     // cval(`[
     //     self makeSlot: "x" with: 5.
@@ -137,24 +136,24 @@ test('Debug tests',() => {
 })
 test("block arg tests",() => {
     let scope = make_standard_scope()
-    cval(`[
+    mval(`
         self makeSlot: "foo" with: [
             88.
         ].
         self foo.
-     ] value.`,scope,NumObj(88))
-    cval(`[
+     `,scope,NumObj(88))
+    mval(`
         self makeSlot: "foo:" with: [ v |
             88.
         ].
         self foo: 1.
-    ] value.`,scope,NumObj(88))
-    cval(`[
+    `,scope,NumObj(88))
+    mval(`
         self makeSlot: "foo:" with: [ v |
             88 + v.
         ].
         self foo: 1.
-    ] value .`,scope,NumObj(89))
+    `,scope,NumObj(89))
     // cval(`[
     //     self makeSlot: "foo" with: (Object clone).
     //     foo makeSlot: "bar" with: 88.
@@ -197,15 +196,15 @@ test("global scope tests",() => {
 })
 test('assignment operator', () => {
     let scope = make_standard_scope()
-    sval(`[
+    mval(`
         v := 5.
         v.
-    ] value.`,scope,NumObj(5))
-    sval(`[
+    `,scope,NumObj(5))
+    mval(`
         v := 5.
         v := 6.
         v.
-    ] value.`,scope,NumObj(6))
+    `,scope,NumObj(6))
     // sval(`[
     //     T := (Object clone).
     //     T make_data_slot: "v" with: 44.
@@ -221,7 +220,7 @@ test('assignment operator', () => {
 })
 test('fib recursion',() => {
     let scope = make_standard_scope()
-    cval(`[
+    mval(`
         Global makeSlot: "Math" with: (Object clone).
         Math setObjectName: "Math".
         Math makeSlot: "fib:" with: [n|
@@ -230,7 +229,7 @@ test('fib recursion',() => {
             (Math fib: ( n - 2 ) ) + (Math fib: (n - 1 ) ).
         ].
         Math fib: 6.
-     ] value . `,scope,NumObj(8))
+     `,scope,NumObj(8))
 })
 test('simple return', () => {
     let scope = make_standard_scope();
