@@ -4,6 +4,11 @@ This is a minimal implementation of a Smalltalk / Self like language.
 It uses prototypes (like Self), with single inheritance and has no
 classes. To create a new class like thing (a prototype) clone an existing one.
 
+
+### old
+
+**The syntax is now traditional Smalltalk, so the code below won't compile anymore**.
+
 Method calls are message sends with an arbitrary number of arguments, so you need
 to use statements (ending with '.') to separate method calls. Message names (selectors)
 must be a single word. Keyword style selectors (`at:do:`) are not supported.
