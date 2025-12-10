@@ -83,7 +83,7 @@
 <script type="module">
     import {NilObj} from "./src/obj.ts";
     import {JoshLogger} from "./src/util.ts";
-    import {eval_ast} from "./src/eval.ts";
+    import {eval_ast, eval_statements} from "./src/eval.ts";
     import {make_browser_scope} from "./src/browser.ts";
     import {parse} from "./src/parser.ts";
 
@@ -115,39 +115,28 @@
         cons.scrollTop = cons.scrollHeight
 
     }
-    function cval(code, scope) {
+    function eval_it(code, scope) {
         d.disable()
         d.p('=========')
         d.p(`code is '${code}'`)
-        let body = parse(code,'Statement');
-        d.p('ast is', body.toString())
         try {
-            let last = NilObj()
-            if (Array.isArray(body)) {
-                for (let ast of body) {
-                    last = eval_ast(ast, scope)
-                    if (!last) last = NilObj()
-                }
-            } else {
-                last = eval_ast(body, scope);
-            }
-            if (last._is_return) last = last.get_slot('value');
-            d.p("returned", last.print())
-            output(last)
+            let ret = eval_statements(code,scope)
+            d.p("returned", ret)
+            output(ret)
         } catch (e) {
             console.log("error happened",e.name, e.type,e.message)
             output(e)
         }
     }
 
-    cval(`[
+    eval_statements(`
         dom := DomProxy clone.
         dom init.
         button := (dom makeButton: "hi there").
         Debug print: 'here'.
         dom append: button.
         Global makeSlot: "dom" with: dom.
-    ] value.`,scope)
+    `,scope)
 
     on($("#repl"),'change',() => {
         // console.log("repl changed")
@@ -161,9 +150,8 @@
             const selectionStart = textArea.selectionStart;
             const selectionEnd = textArea.selectionEnd;
             const selectedText = textArea.value.substring(selectionStart, selectionEnd);
-
             console.log("executing", selectedText)
-            cval(selectedText, scope)
+            eval_it(selectedText, scope)
         }
     })
 </script>

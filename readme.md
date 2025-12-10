@@ -46,6 +46,11 @@ Moo uses mostly standard Smalltalk syntax. Notable changes:
 * add more APIs to access files, URLs, and manipulate images.
 * build a proper class browser and editor.
 
+## Running
+
+* run the unit tests with `npm test`.
+* Run the web repl with `npm run dev`.
+
 ## Resources
 
 * [The evolution of Smalltalk: from Smalltalk-72 through Squeak](https://dl.acm.org/doi/10.1145/3386335) by Dan Ingalls.
