@@ -12,31 +12,6 @@ import {compile, execute} from "./bytecode.test.ts";
 
 const d = new JoshLogger()
 d.disable()
-export function cval(code:string, scope:Obj, expected?:Obj) {
-    d.p('=========')
-    d.p(`code is '${code}'`)
-    let body = parse(code,'Statement');
-    d.p('ast is',body)
-    let last = NilObj()
-    if (Array.isArray(body)) {
-        for(let ast of body) {
-            last = eval_ast(ast,scope)
-            if (!last) last = NilObj()
-        }
-    } else {
-        last = eval_ast(body as Ast, scope);
-    }
-    if (last._is_return) last = last.get_slot('value') as Obj;
-    d.p("returned", last.print())
-    if(typeof expected !== 'undefined') {
-        if(!objsEqual(last,expected)) {
-            console.log("not equal")
-            console.log(last.print())
-            console.log(expected.print())
-        }
-        assert(objsEqual(last, expected))
-    }
-}
 export function mval(code:string, scope:Obj, expected?:Obj) {
     d.p('=========')
     d.p(`code is '${code}'`)
@@ -76,14 +51,14 @@ function evalTreeWalk(body:Ast, scope:Obj):Obj {
     if (last._is_return) last = last.get_slot('value') as Obj;
     return last
 }
-function compareEval(source:string, scope:Obj, expected:Obj) {
+export function cval(source:string, scope:Obj, expected:Obj) {
     d.p('=========')
     d.p(`code is '${source}'`)
     let body = parse(source,'BlockBody');
     d.p('ast is',body)
     let ret_twalk = evalTreeWalk(body,scope)
     d.p("tree walk returned",ret_twalk.print())
-    let bytecode = compile(parse(source,'Exp'))
+    let bytecode = compile(parse(source,'BlockBody'))
     let ret_stack  =  execute(bytecode,scope)
 
     d.p("stack returned",ret_stack.print())
@@ -94,10 +69,12 @@ function compareEval(source:string, scope:Obj, expected:Obj) {
         throw new Error(`${ret_twalk.print()} !== ${ret_stack.print()}`)
     }
 }
-test("basic values", () => {
+test("compare basic values", () => {
     let scope:Obj = make_standard_scope();
-    // compareEval('6',scope, NumObj(5))
-    compareEval('5 + 5',scope, NumObj(10))
+    cval('6',scope, NumObj(5))
+    cval('5 + 5',scope, NumObj(10))
+    cval(` self .`,scope,scope)
+    cval(' 5 value .',scope,NumObj(5))
 })
 test('scope tests',() => {
     let scope:Obj = make_standard_scope();

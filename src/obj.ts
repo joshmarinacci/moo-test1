@@ -135,19 +135,19 @@ export class Obj {
     }
 
     lookup_slot(name: string):Obj {
-        // d.p(`looking up name '${name}' on`, this.name)//,this.print(2))
+        d.p(`looking up name '${name}' on`, this.name)//,this.print(2))
         if (name === 'self') {
             return this
         }
         return this._safe_lookup_slot(name, 20);
     }
     _safe_lookup_slot(name: string, depth: number): Obj {
-        // d.p("safe lookup slot",depth ,name,'on',this.name)
+        d.p("safe lookup slot",depth ,name,'on',this.name)
         if(depth < 1) {
             throw new Error("recursed too deep!")
         }
         if(this._method_slots.has(name)) {
-            // d.p(`has slot '${name}'`);
+            d.p(`has slot '${name}' on ${this.name}`);
             return this._method_slots.get(name)
         }
         if(this.parent) {
@@ -158,7 +158,7 @@ export class Obj {
                 return this.parent._safe_lookup_slot(name, depth - 1)
             }
         }
-        // d.warn(`slot not found!: '${name}'`)
+        d.warn(`slot not found!: '${name}'`)
         return NilObj()
     }
 
@@ -299,13 +299,13 @@ export const ROOT = new Obj("ROOT", null,{
     },
     'getJsSlot:':(rec:Obj, args:Array<Obj>):Obj => {
         let slot_name = args[0]._get_js_string()
-        return rec.get_js_slot(slot_name)
+        return rec.get_js_slot(slot_name) as Obj
     },
     'setObjectName:':(rec:Obj, args:Array<Obj>):Obj => {
         rec.name = args[0]._get_js_string()
         return NilObj()
     },
-    'clone':(rec:Obj):Obj => rec.clone(),
+    'clone':FakeNatMeth((rec:Obj):Obj => rec.clone()),
     'dump':(rec:Obj):Obj => {
         console.log("DUMPOING")
         d.p("DUMPING: ", rec.name)

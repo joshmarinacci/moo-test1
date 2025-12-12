@@ -61,7 +61,7 @@ export class JoshLogger {
 
     error(...args: any[]) {
         if(this.enabled) {
-            console.log(this.generate_tab(), ...args)
+            console.log(this.generate_tab(),'ERROR:', ...args)
         }
     }
 }

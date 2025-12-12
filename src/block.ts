@@ -1,4 +1,4 @@
-import {NilObj, Obj, ObjectProto} from "./obj.ts";
+import {NatMeth, NilObj, Obj, ObjectProto} from "./obj.ts";
 import {AstToSource, } from "./ast.ts";
 import type {Statement, PlainId} from "./ast.ts"
 import {StrObj} from "./string.ts";
@@ -21,11 +21,11 @@ class ActivationObj extends Obj {
     }
 }
 export const BlockProto = new Obj("BlockProto", ObjectProto, {
-    'print': (rec: Obj) => {
+    'print': NatMeth((rec: Obj) => {
         let body = rec.get_js_slot('body') as Array<Statement>
         return StrObj(body.map(st => AstToSource(st)).join('\n'))
-    },
-    'value': (rec: Obj, args: Array<Obj>) => {
+    }),
+    'value': NatMeth((rec: Obj, args: Array<Obj>) => {
         d.p("inside of the block")
         let params: Array<PlainId> = rec.get_slot('args') as unknown as Array<PlainId>
         let body = rec.get_js_slot('body') as Array<Statement>
@@ -62,5 +62,5 @@ export const BlockProto = new Obj("BlockProto", ObjectProto, {
             }
         }
         return last
-    }
+    })
 })

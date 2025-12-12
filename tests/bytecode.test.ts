@@ -20,6 +20,9 @@ type OpType = 'lookup-message'
 type ByteOp = [OpType,unknown]
 type ByteCode = Array<ByteOp>;
 
+let d = new JoshLogger()
+d.disable()
+
 function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
     let name = op[0]
     if(name === 'load-literal-number') {
@@ -72,7 +75,12 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
         }
         if (method.name === 'Block') {
             method.parent = rec
-            let meth = method.get_js_slot('value') as Function
+            let meth = method.get_js_slot('value') as unknown
+            if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
+                let ret = (meth.get_js_slot(JS_VALUE) as Function)(method,args)
+                stack.push(ret)
+                return NilObj()
+            }
             if (meth instanceof Function) {
                 let ret = meth(method,args)
                 stack.push(ret)
@@ -81,6 +89,8 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
         }
         d.error(op)
         d.error("method is", method)
+        d.p("is native method?",method.is_kind_of('NativeMethod'))
+        d.p("is block method?",method.is_kind_of('Block'))
         throw new Error("shouldn't be here")
     }
     if(name === 'assign') {
@@ -92,8 +102,6 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
     throw new Error(`unknown bytecode operation '${name}'`)
 }
 
-let d = new JoshLogger()
-d.disable()
 export function execute(code: ByteCode, scope: Obj):Obj {
     let stack:Array<Obj> = []
     d.p("executing")
@@ -134,12 +142,15 @@ function compare_execute(code:ByteCode, expected: Obj) {
 }
 
 export function compile(ast: Ast):ByteCode {
-    // d.p("compiling",ast)
+    d.p("compiling",ast)
     if(Array.isArray(ast)) {
         return ast.map(a => compile(a)).flat()
     }
     if(ast.type === 'statement') {
         return compile(ast.value)
+    }
+    if(ast.type === 'group') {
+        return ast.body.map(v => compile(v)).flat() as ByteCode
     }
     if(ast.type === 'assignment') {
         return [
@@ -227,7 +238,6 @@ test('5 square',() => {
         ['load-literal-number',5],
         ['lookup-message','square'],
         ['send-message',0],
-        // ['return-value',null]
     ], NumObj(25))
 })
 test('compile & execute: 1 + 2 = 3',() =>{
@@ -251,4 +261,10 @@ test("block arg tests",() => {
         ].
         self foo.
      `, NumObj(88))
+})
+test('block eval',() => {
+    ccem('[ 5 . ] value .',NumObj(5))
+})
+test('group eval',() => {
+    ccem('(8 + 8).',NumObj(16))
 })

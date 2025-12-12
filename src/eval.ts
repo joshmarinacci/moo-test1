@@ -25,8 +25,14 @@ d.disable()
 
 export function eval_block_obj(clause: Obj, args:Array<Obj>) {
     if (clause.name !== 'Block') return clause
-    let meth = clause.get_js_slot('value') as Function
-    return meth(clause,args)
+    let meth = clause.get_js_slot('value') as unknown
+    if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
+        return (meth.get_js_slot(JS_VALUE) as Function)(clause,args)
+    }
+    if (typeof meth === 'function') {
+        return meth(clause, args)
+    }
+    throw new Error("bad failure on evaluating block object")
 }
 
 function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
