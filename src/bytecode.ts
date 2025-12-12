@@ -114,7 +114,9 @@ export function execute_bytecode(code: ByteCode, scope: Obj): Obj {
     }
     d.outdent()
     if (stack.length > 0) {
-        return stack.pop() as Obj
+        let last = stack.pop() as Obj
+        if (last && last._is_return) last = last.get_slot('value') as Obj;
+        return last
     } else {
         return NilObj()
     }
