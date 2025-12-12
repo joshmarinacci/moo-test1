@@ -83,6 +83,9 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
                 return NilObj()
             }
         }
+        console.log(op)
+        console.log("method is", method)
+        throw new Error("shouldn't be here")
     }
     if(name === 'assign') {
         let value = stack.pop() as Obj
@@ -207,19 +210,19 @@ test("1 + 2 = 3",() => {
         // put a literal on the stack
         //LoadLiteralNumber(2),
         ['load-literal-number',2],
-        // put a literal on the stack
-        //LoadLiteralNumber(1),
-        ['load-literal-number',1],
         // lookup message from target on the stack
         //LookupMessage('+'),
         ['lookup-message','+'],
+        // put a literal on the stack
+        //LoadLiteralNumber(1),
+        ['load-literal-number',1],
         // invoke message on the stack with target and one argument from the stack
         // puts result on the stack
         //SendMessage(1),
         ['send-message',1],
         // return whatever is left on the stack
         //ReturnValue(),
-        ['return-value',null]
+        // ['return-value',null]
     ],NumObj(3))
 })
 test('5 square',() => {

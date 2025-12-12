@@ -16,11 +16,9 @@ const js_num_op = (cb:(a:number,b:number)=>number):NativeMethodSigature => {
 }
 const js_bool_op = (cb:(a:number,b:number)=>boolean) => {
     return function (rec:Obj, args:Array<Obj>){
-        console.log("doing boolean op")
         if (!args[0].is_kind_of('NumberProto')) {
             throw new Error(`argument not a number ${args[0].name}`)
         }
-        console.log("comparing ", rec._get_js_number(), args[0]._get_js_number())
         return BoolObj(cb(rec._get_js_number(), args[0]._get_js_number()))
     }
 }
