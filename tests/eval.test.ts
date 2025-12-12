@@ -210,11 +210,11 @@ test("global scope tests",() => {
 })
 test('assignment operator', () => {
     let scope = make_standard_scope()
-    mval(`
+    cval(`
         v := 5.
         v.
     `,scope,NumObj(5))
-    mval(`
+    cval(`
         v := 5.
         v := 6.
         v.
@@ -266,7 +266,7 @@ test('non local return 2', () => {
 test('eval vector class',() => {
     let scope = make_standard_scope()
     cval(`[
-        Global makeSlot: "Vector" with: ObjectBase clone.
+        Global makeSlot: "Vector" with: Object clone.
         Vector setObjectName: "Vector".
         Vector make_data_slot: "x" with: 0.
         Vector make_data_slot: "y" with: 0.
