@@ -265,12 +265,17 @@ export class Obj {
     }
 }
 
+export const FakeNatMeth = (fun:NativeMethodSigature):Obj => {
+    return new Obj("NativeMethod", null, {
+        '_jsvalue': fun,
+    })
+}
 export const ROOT = new Obj("ROOT", null,{
     'make_data_slot:with:':(rec:Obj, args:Array<Obj>) => {
         rec._make_data_slot(args[0]._get_js_string(), args[1])
         return NilObj()
     },
-    'makeSlot:with:':(rec:Obj, args:Array<Obj>):Obj => {
+    'makeSlot:with:':FakeNatMeth((rec:Obj, args:Array<Obj>):Obj => {
         let slot_name = args[0]._get_js_string()
         let slot_value = args[1]
         rec._make_method_slot(slot_name,slot_value)
@@ -278,7 +283,7 @@ export const ROOT = new Obj("ROOT", null,{
             slot_value.parent = rec
         }
         return NilObj();
-    },
+    }),
     'understands:with:':(rec:Obj, args:Array<Obj>):Obj => {
         let slot_name = args[0]._get_js_string()
         let slot_value = args[1]

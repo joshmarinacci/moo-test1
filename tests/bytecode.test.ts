@@ -5,8 +5,9 @@ import {objsEqual} from "../src/debug.ts";
 import {JoshLogger} from "../src/util.ts";
 import {make_standard_scope} from "../src/standard.ts";
 import {parse} from "../src/parser.ts";
-import {type Ast} from "../src/ast.ts";
+import {type Ast, type BlockLiteral} from "../src/ast.ts";
 import {StrObj} from "../src/string.ts";
+import {BlockProto} from "../src/block.ts";
 
 type OpType = 'lookup-message'
             | 'send-message'
@@ -14,6 +15,7 @@ type OpType = 'lookup-message'
             | 'load-literal-number'
             | 'load-plain-id'
             | 'load-literal-string'
+            | 'create-literal-block'
             | 'assign'
 type ByteOp = [OpType,unknown]
 type ByteCode = Array<ByteOp>;
@@ -24,11 +26,21 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
         stack.push(NumObj(op[1] as number))
         return NilObj()
     }
-    if (name === 'load-literal-string') {
+    if(name === 'load-literal-string') {
         stack.push(StrObj(op[1] as string))
         return NilObj()
     }
-    if (name === 'load-plain-id') {
+    if(name === 'create-literal-block') {
+        let blk = op[1] as BlockLiteral
+        let blk2 = BlockProto.clone()
+        blk2.name = 'Block'
+        blk2._make_js_slot('args',blk.parameters);
+        blk2._make_js_slot('body',blk.body);
+        blk2.parent = scope;
+        stack.push(blk2)
+        return NilObj()
+    }
+    if(name === 'load-plain-id') {
         stack.push(scope.lookup_slot(op[1] as string))
         return NilObj()
     }
@@ -51,8 +63,12 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj):Obj {
         for(let i=0; i<arg_count; i++) {
             args.push(stack.pop())
         }
+        args.reverse()
         let method = stack.pop() as Obj
         let rec = stack.pop() as Obj
+        // console.log("method is", method.print())
+        // console.log("receiver is", rec.print())
+        // console.log("args are", args.map(a => a.print()))
         if (method.is_kind_of("NativeMethod")) {
             let ret = (method.get_js_slot(JS_VALUE) as Function)(rec,args)
             stack.push(ret)
@@ -118,7 +134,7 @@ function compare_execute(code:ByteCode, expected: Obj) {
 }
 
 export function compile(ast: Ast):ByteCode {
-    d.p("compiling",ast)
+    // d.p("compiling",ast)
     if(Array.isArray(ast)) {
         return ast.map(a => compile(a)).flat()
     }
@@ -164,6 +180,12 @@ export function compile(ast: Ast):ByteCode {
     }
     if(ast.type === 'number-literal') {
         return [['load-literal-number',ast.value]]
+    }
+    if(ast.type === 'block-literal') {
+        return [['create-literal-block',ast]]
+    }
+    if(ast.type === 'string-literal') {
+        return [['load-literal-string',ast.value]]
     }
     if(ast.type === 'plain-identifier') {
         return [['load-plain-id',ast.name]]
@@ -221,4 +243,12 @@ test('assignment operator', () => {
         v := 5.
         v.
     `, NumObj(5))
+})
+test("block arg tests",() => {
+    ccem(`
+        self makeSlot: "foo" with: [
+            88.
+        ].
+        self foo.
+     `, NumObj(88))
 })
