@@ -23,87 +23,51 @@ import {BlockProto} from "./block.ts";
 const d = new JoshLogger()
 d.disable()
 
-export function eval_block_obj(clause: Obj, args:Array<Obj>) {
-    if (clause.name !== 'Block') return clause
-    let meth = clause.get_js_slot('value') as unknown
+export function eval_block_obj(method: Obj, args:Array<Obj>) {
+    if (method.name !== 'Block') return method
+    let meth = method.get_js_slot('value') as unknown
     if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
-        return (meth.get_js_slot(JS_VALUE) as Function)(clause,args)
+        return (meth.get_js_slot(JS_VALUE) as Function)(method,args)
     }
     if (typeof meth === 'function') {
-        return meth(clause, args)
+        return meth(method, args)
     }
     throw new Error("bad failure on evaluating block object")
+}
+
+function really_perform_call(name:string, rec:Obj, method:unknown, args:Array<Obj>):Obj {
+    if (method instanceof Obj && method.isNil()) {
+        throw new Error(`method is nil! could not find method '${name}' on ${rec.print()}`)
+    }
+    if (method instanceof Function) {
+        return method(rec,args)
+    }
+    if (method instanceof Obj && method.is_kind_of("NativeMethod")) {
+        return (method.get_js_slot(JS_VALUE) as Function)(rec,args)
+    }
+    if (method instanceof Obj && method.name === 'Block') {
+        method.parent = rec
+        return eval_block_obj(method,args)
+    }
+    throw new Error("method call not performed properly.")
 }
 
 function perform_call(rec: Obj, call: UnaryCall | BinaryCall | KeywordCall, scope: Obj):Obj {
     if(call.type === 'unary-call') {
         let method = rec.lookup_slot(call.message.name)
-        if (method instanceof Obj && method.isNil()) {
-            throw new Error(`method is nil! could not find '${call.message.name}'`)
-        }
-        if (method instanceof Function) {
-            return method(rec,[])
-        }
-        if (method.is_kind_of("NativeMethod")) {
-            return (method.get_js_slot(JS_VALUE) as Function)(rec,[])
-        }
-        if (method.name === 'Block') {
-            method.parent = rec
-            let meth = method.get_js_slot('value') as unknown
-            if (meth instanceof Function) {
-                return meth(method,[])
-            }
-            if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
-                return (meth.get_js_slot(JS_VALUE) as Function)(method,[])
-            }
-        }
+        let args:Array<Obj> = []
+        return really_perform_call(call.message.name,rec,method,args)
     }
     if(call.type === 'binary-call') {
         let method = rec.lookup_slot(call.operator.name)
-        if (method instanceof Obj && method.isNil()) {
-            throw new Error(`could not find method '${call.operator.name}' on ${rec.print()}'`)
-        }
         let arg = eval_ast(call.argument,scope)
-        if (method instanceof Function) {
-            return method(rec,[arg])
-        }
-        if (method.is_kind_of("NativeMethod")) {
-            return (method.get_js_slot(JS_VALUE) as Function)(rec,[arg])
-        }
-        if (method.name === 'Block') {
-            method.parent = rec
-            let meth = method.get_js_slot('value') as unknown
-            if (meth instanceof Function) {
-                return meth(method,[arg])
-            }
-            if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
-                return (meth.get_js_slot(JS_VALUE) as Function)(method,[arg])
-            }
-        }
+        return really_perform_call(call.operator.name, rec,method,[arg])
     }
     if(call.type === 'keyword-call') {
         let method_name = call.args.map(arg => arg.name.name).join("")
         let method = rec.lookup_slot(method_name)
-        if (method  instanceof Obj && method.isNil()) {
-            throw new Error(`method is nil! could not find '${method_name}'`)
-        }
         let args = call.args.map(arg => eval_ast(arg.value,scope))
-        if (method instanceof Function) {
-            return method(rec,args)
-        }
-        if (method.is_kind_of("NativeMethod")) {
-            return (method.get_js_slot(JS_VALUE) as Function)(rec,args)
-        }
-        if (method.name === 'Block') {
-            method.parent = rec
-            let meth = method.get_js_slot('value') as unknown
-            if (meth instanceof Function) {
-                return meth(method,args)
-            }
-            if (meth instanceof Obj && meth.is_kind_of("NativeMethod")) {
-                return (meth.get_js_slot(JS_VALUE) as Function)(method,args)
-            }
-        }
+        return really_perform_call(method_name, rec,method,args)
     }
 
     throw new Error("method call not performed properly.")
