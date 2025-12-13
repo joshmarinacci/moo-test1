@@ -13,6 +13,7 @@ type OpType = 'lookup-message'
     | 'load-literal-string'
     | 'create-literal-block'
     | 'assign'
+    | 'return'
 type ByteOp = [OpType, unknown]
 export type ByteCode = Array<ByteOp>;
 
@@ -35,6 +36,7 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj): Obj {
         blk2.name = 'Block'
         blk2._make_js_slot('args', blk.parameters);
         blk2._make_js_slot('body', blk.body);
+        blk2._make_js_slot('bytecode', blk.body.map(a => compile_bytecode(a)).flat())
         blk2.parent = scope;
         stack.push(blk2)
         return NilObj()
@@ -47,6 +49,9 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj): Obj {
         let message = op[1] as string
         let rec: Obj = stack.pop() as Obj
         let method = rec.lookup_slot(message)
+        if(typeof method == 'function') {
+            d.p(`error. method '${message}' on ${rec.print()} is unwrapped JS function`)
+        }
         if (method.isNil()) {
             d.p("couldn't find the message")
             return new Obj("Exception", ObjectProto, {"message": `Message not found: '${message}'`})
@@ -94,6 +99,14 @@ function execute_op(op: ByteOp, stack: Obj[], scope: Obj): Obj {
         let name = stack.pop() as Obj
         scope._make_method_slot(name._get_js_string(), value)
         return NilObj()
+    }
+    if (name === 'return') {
+        let value = stack.pop() as Obj
+        let ret = new Obj('non-local-return',scope.parent,{})
+        ret._is_return = true
+        ret._make_method_slot('value',value)
+        ret._make_method_slot('target',scope.parent as Obj)
+        return ret
     }
     throw new Error(`unknown bytecode operation '${name}'`)
 }
@@ -181,6 +194,12 @@ export function compile_bytecode(ast: Ast): ByteCode {
     }
     if (ast.type === 'plain-identifier') {
         return [['load-plain-id', ast.name]]
+    }
+    if (ast.type === 'return') {
+        return [
+            compile_bytecode(ast.value),
+            [['return', null]]
+        ].flat() as ByteCode
     }
     throw new Error(`unknown ast type ${ast.type}`)
 }

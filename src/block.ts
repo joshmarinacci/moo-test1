@@ -4,6 +4,7 @@ import type {Statement, PlainId} from "./ast.ts"
 import {StrObj} from "./string.ts";
 import {eval_ast} from "./eval.ts";
 import {JoshLogger} from "./util.ts";
+import { type ByteCode, execute_bytecode} from "./bytecode.ts";
 
 const d = new JoshLogger()
 d.disable()
@@ -20,6 +21,20 @@ class ActivationObj extends Obj {
         return super.lookup_slot(name);
     }
 }
+
+function process_return(last: Obj, scope: ActivationObj) {
+    let target: Obj = last._method_slots.get('target') as Obj
+    if (target === scope) {
+        d.p("fast return found. returning",last._method_slots.get('value'))
+        return last._method_slots.get('value') as Obj
+    }
+    if (target && target.parent === scope) {
+        d.p("fast return through parent found. returning",last._method_slots.get('value'))
+        return last._method_slots.get('value') as Obj
+    }
+    return last
+}
+
 export const BlockProto = new Obj("BlockProto", ObjectProto, {
     'print': NatMeth((rec: Obj) => {
         let body = rec.get_js_slot('body') as Array<Statement>
@@ -28,6 +43,7 @@ export const BlockProto = new Obj("BlockProto", ObjectProto, {
     'value': NatMeth((rec: Obj, args: Array<Obj>) => {
         d.p("inside of the block")
         let params: Array<PlainId> = rec.get_slot('args') as unknown as Array<PlainId>
+        let bytecode = rec.get_js_slot('bytecode') as ByteCode
         let body = rec.get_js_slot('body') as Array<Statement>
         if (!Array.isArray(body)) throw new Error("block body isn't an array")
         let scope = new ActivationObj(`block-activation-${++BLOCK_COUNT}`, rec, {})
@@ -42,6 +58,13 @@ export const BlockProto = new Obj("BlockProto", ObjectProto, {
             scope._make_method_slot(params[i].name, args[i])
         }
         let last = NilObj()
+        if(bytecode) {
+            last = execute_bytecode(bytecode,scope)
+            if (last._is_return) {
+                return process_return(last,scope)
+            }
+        }
+
         for (let ast of body) {
             last = eval_ast(ast, scope)
             if (!last) last = NilObj()
@@ -49,16 +72,7 @@ export const BlockProto = new Obj("BlockProto", ObjectProto, {
                 last = scope.lookup_slot(last._get_js_string())
             }
             if (last._is_return) {
-                let target: Obj = last._method_slots.get('target')
-                if (target === scope) {
-                    d.p("fast return found. returning",last._method_slots.get('value'))
-                    return last._method_slots.get('value') as Obj
-                }
-                if (target && target.parent === scope) {
-                    d.p("fast return through parent found. returning",last._method_slots.get('value'))
-                    return last._method_slots.get('value') as Obj
-                }
-                return last
+                return process_return(last,scope)
             }
         }
         return last

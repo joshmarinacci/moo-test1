@@ -293,18 +293,18 @@ export const ROOT = new Obj("ROOT", null,{
         }
         return NilObj();
     },
-    'getSlot:':(rec:Obj, args:Array<Obj>):Obj => {
+    'getSlot:':FakeNatMeth((rec:Obj, args:Array<Obj>):Obj => {
         let slot_name = args[0]._get_js_string()
         return rec.get_slot(slot_name)
-    },
+    }),
     'getJsSlot:':(rec:Obj, args:Array<Obj>):Obj => {
         let slot_name = args[0]._get_js_string()
         return rec.get_js_slot(slot_name) as Obj
     },
-    'setObjectName:':(rec:Obj, args:Array<Obj>):Obj => {
+    'setObjectName:':FakeNatMeth((rec:Obj, args:Array<Obj>):Obj => {
         rec.name = args[0]._get_js_string()
         return NilObj()
-    },
+    }),
     'clone':FakeNatMeth((rec:Obj):Obj => rec.clone()),
     'dump':(rec:Obj):Obj => {
         console.log("DUMPOING")

@@ -265,7 +265,7 @@ test('non local return 2', () => {
 })
 test('eval vector class',() => {
     let scope = make_standard_scope()
-    cval(`[
+    cval(`
         Global makeSlot: "Vector" with: Object clone.
         Vector setObjectName: "Vector".
         Vector make_data_slot: "x" with: 0.
@@ -291,7 +291,7 @@ test('eval vector class',() => {
         b := Vector x: 6 y: 7 z: 8.
         c := a add: b.
         c z.
-    ] value.`,scope,NumObj(9))
+    `,scope,NumObj(9))
 })
 test('fizzbuzz',() => {
     let scope = make_standard_scope()
